@@ -1,0 +1,106 @@
+{
+ "real": {
+  "seedream_5_5": {
+   "path": "assets/examples/real_seedream_5_5.jpg",
+   "ms": 12049,
+   "size": [
+    683,
+    1024
+   ]
+  },
+  "gpt_image_2_6": {
+   "path": "assets/examples/real_gpt_image_2_6.jpg",
+   "ms": 15095,
+   "size": [
+    683,
+    1024
+   ]
+  },
+  "nano_banana_2_1": {
+   "path": "assets/examples/real_nano_banana_2_1.jpg",
+   "ms": 14611,
+   "size": [
+    687,
+    1024
+   ]
+  }
+ },
+ "identity": {
+  "seedream_5_5": {
+   "path": "assets/examples/identity_seedream_5_5.jpg",
+   "ms": 18978,
+   "size": [
+    765,
+    1024
+   ]
+  },
+  "gpt_image_2_6": {
+   "path": "assets/examples/identity_gpt_image_2_6.jpg",
+   "ms": 17934,
+   "size": [
+    683,
+    1024
+   ]
+  },
+  "nano_banana_2_1": {
+   "path": "assets/examples/identity_nano_banana_2_1.jpg",
+   "ms": 14526,
+   "size": [
+    765,
+    1024
+   ]
+  }
+ },
+ "hangul": {
+  "seedream_5_5": {
+   "path": "assets/examples/hangul_seedream_5_5.jpg",
+   "ms": 12451,
+   "size": [
+    1024,
+    575
+   ]
+  },
+  "gpt_image_2_6": {
+   "path": "assets/examples/hangul_gpt_image_2_6.jpg",
+   "ms": 30354,
+   "size": [
+    1024,
+    683
+   ]
+  },
+  "nano_banana_2_1": {
+   "path": "assets/examples/hangul_nano_banana_2_1.jpg",
+   "ms": 15048,
+   "size": [
+    1024,
+    572
+   ]
+  }
+ },
+ "edit": {
+  "seedream_5_5": {
+   "path": "assets/examples/edit_seedream_5_5.jpg",
+   "ms": 14083,
+   "size": [
+    1024,
+    575
+   ]
+  },
+  "gpt_image_2_6": {
+   "path": "assets/examples/edit_gpt_image_2_6.jpg",
+   "ms": 27500,
+   "size": [
+    1024,
+    683
+   ]
+  },
+  "nano_banana_2_1": {
+   "path": "assets/examples/edit_nano_banana_2_1.jpg",
+   "ms": 14872,
+   "size": [
+    1024,
+    572
+   ]
+  }
+ }
+}

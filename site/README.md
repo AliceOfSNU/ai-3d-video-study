@@ -42,6 +42,7 @@ STUDY_IMAGE_PROVIDER=mock python server.py 8011               # 비용 0 목업 
 | `pick` | 결과물 고르기 (이미지함에서 고르기, 직접 올리기, 내려받기) |
 | `table` | 정적인 표 (`head`, `rows`, `note`) |
 | `compare` | 프롬프트 하나로 세 모델을 동시에 생성해 이름을 가린 A·B·C로 보여 준다. 한 장을 고르고 이유 칩을 누르면 이름이 공개된다. 고른 결과는 `lv1:<유닛>:pick:<id>`에 저장. `promptFrom`(앞 유닛 프롬프트), `pairFrom`(짝 추천), `ref`(`prefer`: 앞 유닛에서 고른 이미지, `sample`: 건너뛴 사람용 예시), `showRef`(원본 같이 보기), `toggleRef`(원본과 번갈아 보기), `aspect: "ref"`(원본 비율) |
+| `compare`의 `example` | 운영진이 미리 만든 세 모델 결과(`site/assets/examples/`), 접힌 채로 이름과 생성 시간을 보여 준다 |
 | `stats` | 모델별 평균 생성 시간, 고른 횟수, 힉스필드 크레딧(`credits`, 비어 있으면 "확인 예정") |
 | `summary` | `compare` 결과로 채워지는 선택표, 기본 모델 고르기(이후 생성기의 기본값), 표를 PNG로 내려받기 |
 

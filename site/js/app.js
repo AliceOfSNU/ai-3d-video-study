@@ -735,8 +735,26 @@ function compareBlock(b, ctx) {
     return d;
   }
 
+  if (b.example) node.appendChild(exampleView(b.example));
   renderOut();
   return node;
+}
+
+// pre-made comparison by the organisers (names shown), collapsed so it doesn't bias the participant's own pick
+function exampleView(ex) {
+  const d = el(`<details class="example"><summary>미리 뽑아 둔 예시 비교 보기 <small>${esc(ex.label)}</small></summary>
+    <p class="note">운영진이 같은 조건으로 세 모델에서 미리 만든 결과예요. 내 비교에서 먼저 고른 뒤에 열어 보면 좋아요.</p>
+    <div class="cmp-grid ${ex.ref ? "with-ref" : ""}">
+      ${ex.ref ? `<figure class="imgcard orig"><span class="abl on-img wide">원본</span><img src="${esc(ex.ref)}" alt="" loading="lazy">
+        <figcaption><span class="muted">참고 이미지</span></figcaption></figure>` : ""}
+      ${MODELS.map((m) => `<figure class="imgcard" data-m="${m.id}"><img src="${esc(ex.images[m.id])}" alt="" loading="lazy">
+        <figcaption><span>${esc(m.name)}</span><span class="muted">${ex.seconds && ex.seconds[m.id] ? `${ex.seconds[m.id]}초` : ""}</span></figcaption></figure>`).join("")}
+    </div></details>`);
+  d.querySelectorAll(".imgcard img").forEach((im) => (im.onclick = () => {
+    const m = im.closest(".imgcard").dataset.m;
+    lightbox({ dataUrl: im.src, model: m || null }, false);
+  }));
+  return d;
 }
 
 function statsBlock(b, ctx) {

@@ -93,6 +93,17 @@ const EDIT_EXAMPLES = [
 const HF_CREDITS = { seedream_5_5: null, gpt_image_2_6: null, nano_banana_2_1: null };
 const CREDITS_CHECKED = "";
 
+// pre-made comparisons (one per compare step), made 2026-11-14 with the three real models from the first example
+// of each step (trench-coat person / street pair). Generation seconds as measured then.
+const exampleSet = (id, label, ref, seconds) => ({
+  label, ref, seconds,
+  images: Object.fromEntries(["seedream_5_5", "gpt_image_2_6", "nano_banana_2_1"].map((m) => [m, `assets/examples/${id}_${m}.jpg`])),
+});
+const EXAMPLE_REAL = exampleSet("real", "트렌치코트 인물 프롬프트", null, { seedream_5_5: 12, gpt_image_2_6: 15, nano_banana_2_1: 15 });
+const EXAMPLE_IDENTITY = exampleSet("identity", "얼굴 클로즈업", "assets/sample_person.jpg", { seedream_5_5: 19, gpt_image_2_6: 18, nano_banana_2_1: 15 });
+const EXAMPLE_HANGUL = exampleSet("hangul", "길거리 · '청춘분식' 간판", null, { seedream_5_5: 13, gpt_image_2_6: 30, nano_banana_2_1: 15 });
+const EXAMPLE_EDIT = exampleSet("edit", "겉옷 색만 남색으로", "assets/sample_place.jpg", { seedream_5_5: 14, gpt_image_2_6: 28, nano_banana_2_1: 15 });
+
 // unit 1 results that unit 2 builds on (store keys written by unit 1 blocks)
 const U1_PERSON_PROMPT = "lv1:u1:gen:person:prompt";
 const U1_PICK_PERSON = "lv1:u1:pick:unit1pick:person";
@@ -480,6 +491,7 @@ export const LEVEL = {
               promptFrom: U1_PERSON_PROMPT,
               aspect: "2:3",
               reasons: ["질감", "색감", "구도", "프롬프트를 잘 따름"],
+              example: EXAMPLE_REAL,
             },
           ],
         },
@@ -510,6 +522,7 @@ export const LEVEL = {
               showRef: true,
               aspect: "3:4",
               reasons: ["얼굴", "머리", "옷 디테일"],
+              example: EXAMPLE_IDENTITY,
             },
           ],
         },
@@ -537,6 +550,7 @@ export const LEVEL = {
               pairFrom: "person",
               aspect: "16:9",
               reasons: ["글자 정확", "자연스러움"],
+              example: EXAMPLE_HANGUL,
             },
             {
               type: "tip",
@@ -571,6 +585,7 @@ export const LEVEL = {
               aspect: "ref",
               toggleRef: true,
               reasons: ["말한 것만 바뀜", "얼굴 유지", "배경 유지"],
+              example: EXAMPLE_EDIT,
             },
             {
               type: "tip",

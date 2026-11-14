@@ -238,6 +238,10 @@ textarea.prompt:focus { outline: 2px solid #b9dcb9; border-color: var(--green); 
 .cmp-map { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14.5px; margin-top: 10px; }
 .cmp-map > span { display: inline-flex; align-items: center; gap: 6px; }
 .toggle-orig.on { background: var(--black); color: #fff; border-color: var(--black); }
+.example { margin-top: 18px; border-top: 1px dashed var(--line); padding-top: 14px; }
+.example summary { cursor: pointer; font-weight: 700; font-size: 15px; color: var(--green-d); }
+.example summary small { color: var(--muted); font-weight: 500; margin-left: 6px; }
+.example .note { margin: 8px 0 12px; }
 .older { margin-top: 18px; }
 .older summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: 14px; }
 .older-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; max-width: 640px; }
