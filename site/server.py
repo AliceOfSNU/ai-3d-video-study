@@ -17,9 +17,10 @@ Before CoworkCrew's keys are connected, each model goes to the provider we have 
     openai (default when OPENAI_API_KEY is set):
            GPT Image 2.6   -> OpenAI gpt-image-2.6-sunburst (real)
            Nano Banana 2.1 -> Gemini gemini-nano-banana-2.1 (real, when GEMINI_API_KEY is set)
-           Seedream 5.5    -> stood in by GPT Image 2.6: Higgsfield's public REST API has no Seedream route
-                              (checked GET api.higgsfield.ai/models, 2026-11-14). The response says so
-                              (note "dev: ..."), so the page shows a "dev substitute" tag;
+           Seedream 5.5    -> BytePlus ModelArk dola-seedream-5-5-261028 (real, when ARK_API_KEY is set and the model
+                              is activated in the Ark console). Higgsfield's public REST API has no Seedream route.
+           A provider that refuses for account reasons (not activated, quota) is skipped for 10 min and the model
+           is stood in by GPT Image 2.6; the response says so (note "dev: ..."), so the page shows a "dev substitute" tag;
     mock:  no network, returns a placeholder SVG after a short delay (free UI testing).
 Keys are read from the environment / dance/.env and never printed or sent to the browser.
 """
@@ -49,6 +50,8 @@ MODELS = {"seedream_5_5": "Seedream 5.5", "gpt_image_2_6": "GPT Image 2.6", "nan
 OPENAI_MODEL = os.environ.get("STUDY_OPENAI_MODEL", "gpt-image-2.6-sunburst")
 REAL_ON_OPENAI = {"gpt_image_2_6"}
 GEMINI_MODEL = os.environ.get("STUDY_GEMINI_MODEL", "gemini-nano-banana-2.1")   # Nano Banana 2.1
+SEEDREAM_MODEL = os.environ.get("STUDY_SEEDREAM_MODEL", "dola-seedream-5-5-261028")      # Seedream 5.5 (ModelArk)
+ARK_BASE = os.environ.get("STUDY_ARK_BASE", "https://ark.ap-southeast.bytepluses.com/api/v3")
 GEMINI_ASPECTS = {"1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"}
 
 
@@ -163,34 +166,94 @@ def gen_gemini(model, prompt, aspect, refs):
     raise RuntimeError(f"Nano Banana가 이미지를 돌려주지 않았어요 ({reason}). 프롬프트를 조금 바꿔 다시 시도해 주세요.")
 
 
-_gemini_off_until = 0.0   # set when Gemini refuses for quota/billing; Nano Banana falls back to the stand-in meanwhile
+def seedream_size(aspect):
+    """WxH of about 1.57 MP (like the others' 1024x1536), inside Seedream 5.5's cheapest tier (0.92-2.6 MP)."""
+    try:
+        w, h = (float(x) for x in aspect.split(":"))
+    except Exception:
+        w, h = 1.0, 1.0
+    W = (1536 * 1024 * w / h) ** 0.5
+    return f"{int(round(W / 16) * 16)}x{int(round(W * h / w / 16) * 16)}"
 
 
-def gemini_ready():
-    return bool(os.environ.get("GEMINI_API_KEY")) and time.time() >= _gemini_off_until
+def gen_seedream(model, prompt, aspect, refs):
+    """Seedream 5.5 through BytePlus ModelArk (OpenAI-style /images/generations); references go in `image`."""
+    # 5.5 rejects the 4.x option `sequential_image_generation` (400), so it is not sent
+    body = {"model": SEEDREAM_MODEL, "prompt": prompt, "size": seedream_size(aspect), "response_format": "b64_json",
+            "watermark": False}
+    if refs:
+        body["image"] = refs[0] if len(refs) == 1 else refs[:10]
+    req = urllib.request.Request(f"{ARK_BASE}/images/generations", data=json.dumps(body).encode(), method="POST",
+                                 headers={"Authorization": f"Bearer {os.environ['ARK_API_KEY']}",
+                                          "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        res = json.loads(r.read())
+    item = (res.get("data") or [{}])[0]
+    if item.get("b64_json"):
+        b64 = item["b64_json"]
+        mime = "image/png" if b64.startswith("iVBOR") else "image/jpeg" if b64.startswith("/9j/") else "image/webp"
+        return f"data:{mime};base64,{b64}", ""
+    if item.get("url"):
+        with urllib.request.urlopen(item["url"], timeout=120) as r:
+            data, mime = r.read(), r.headers.get_content_type()
+        return f"data:{mime};base64,{base64.b64encode(data).decode()}", ""
+    raise RuntimeError(f"Seedream이 이미지를 돌려주지 않았어요 ({(item.get('error') or {}).get('message', 'no image')}).")
+
+
+# Providers that refuse for account reasons (model not activated, quota, billing) are skipped for 10 minutes and the
+# model is stood in by GPT Image 2.6 (tagged as a dev substitute), so a missing activation never breaks a session.
+_off_until = {"gemini": 0.0, "seedream": 0.0}
+FALLBACK = {}   # filled below: backend fn -> (name, HTTP codes that mean "account not ready")
+
+
+def ready(name, key_var):
+    return bool(os.environ.get(key_var)) and time.time() >= _off_until[name]
 
 
 def backend(model):
     if PROVIDER == "mock":
         return gen_mock
-    if model == "nano_banana_2_1" and gemini_ready():
+    if model == "nano_banana_2_1" and ready("gemini", "GEMINI_API_KEY"):
         return gen_gemini
+    if model == "seedream_5_5" and ready("seedream", "ARK_API_KEY"):
+        return gen_seedream
     return gen_openai
 
 
 def generate(model, prompt, aspect, refs):
-    """Run the model's backend. If Gemini refuses (429 quota, e.g. a free-tier key with no image quota, or 403),
-    use the GPT Image 2.6 stand-in (tagged as a dev substitute) and skip Gemini for 10 minutes."""
-    global _gemini_off_until
     fn = backend(model)
     try:
         return fn, *fn(model, prompt, aspect, refs)
     except urllib.error.HTTPError as e:
-        if fn is not gen_gemini or e.code not in (403, 429):
+        if fn not in FALLBACK or e.code not in FALLBACK[fn][1]:
             raise
-        _gemini_off_until = time.time() + 600
-        sys.stderr.write(f"gemini HTTP {e.code}: Nano Banana falls back to GPT Image 2.6 for 10 min\n")
+        name = FALLBACK[fn][0]
+        _off_until[name] = time.time() + 600
+        sys.stderr.write(f"{name} HTTP {e.code}: {MODELS[model]} falls back to GPT Image 2.6 for 10 min\n")
         return gen_openai, *gen_openai(model, prompt, aspect, refs)
+
+
+FALLBACK.update({gen_gemini: ("gemini", (403, 429)),                 # free-tier key: no image quota
+                 gen_seedream: ("seedream", (401, 402, 403, 404, 429))})   # 404 ModelNotOpen: not activated
+
+
+def probe_seedream():
+    """Free check at startup: an empty prompt is rejected before generation, with 404 ModelNotOpen when the model
+    is not activated on the account (then Seedream starts on the stand-in, and the banner says so)."""
+    if PROVIDER == "mock" or not os.environ.get("ARK_API_KEY"):
+        return
+    req = urllib.request.Request(f"{ARK_BASE}/images/generations", method="POST",
+                                 data=json.dumps({"model": SEEDREAM_MODEL, "prompt": ""}).encode(),
+                                 headers={"Authorization": f"Bearer {os.environ['ARK_API_KEY']}",
+                                          "Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=30)
+    except urllib.error.HTTPError as e:
+        if e.code in FALLBACK[gen_seedream][1]:
+            _off_until["seedream"] = time.time() + 600
+            sys.stderr.write(f"seedream probe: HTTP {e.code}, using the stand-in for now\n")
+    except Exception as e:  # noqa: BLE001  (network trouble: leave it to the first real request)
+        sys.stderr.write(f"seedream probe failed: {type(e).__name__}\n")
 
 
 def error_message(e):
@@ -205,7 +268,7 @@ def run_job(job_id, model, prompt, aspect, refs):
     t0 = time.time()
     try:
         fn, image, note = generate(model, prompt, aspect, refs)
-        provider = {gen_gemini: "gemini", gen_openai: "openai", gen_mock: "mock"}[fn]
+        provider = {gen_gemini: "gemini", gen_seedream: "byteplus", gen_openai: "openai", gen_mock: "mock"}[fn]
         res = {"status": "done", "image": image, "model": model, "provider": provider, "note": note,
                "ms": int((time.time() - t0) * 1000)}
     except Exception as e:  # noqa: BLE001
@@ -229,13 +292,13 @@ def start_job(model, prompt, aspect, refs):
 def dev_label():
     if PROVIDER == "mock":
         return "목업 모드: 실제 이미지 대신 자리표시 이미지를 돌려줘요 (비용 0)."
-    real = [MODELS[m] for m in MODELS if backend(m) is gen_gemini or m in REAL_ON_OPENAI]
+    real = [MODELS[m] for m in MODELS if backend(m) in (gen_gemini, gen_seedream) or m in REAL_ON_OPENAI]
     sub = [MODELS[m] for m in MODELS if MODELS[m] not in real]
 
     def topic(names):  # 은/는 by how the last digit is read: 영 일 삼 육 칠 팔 end in a consonant
         return "·".join(names) + ("은" if names[-1][-1] in "013678" else "는")
-    label = "코워크크루 키를 연결하기 전이에요. " + topic(real) + " 실제 모델로 생성되고"
-    return label + (", " + topic(sub) + " GPT Image 2.6으로 대체 생성돼요." if sub else "요.")
+    label = "코워크크루 키를 연결하기 전이에요. " + topic(real) + " 실제 모델로 생성"
+    return label + ("되고, " + topic(sub) + " GPT Image 2.6으로 대체 생성돼요." if sub else "돼요.")
 
 
 def gen_mock(model, prompt, aspect, refs):
@@ -343,8 +406,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    probe_seedream()
     srv = http.server.ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"study site: http://{HOST}:{PORT}/   (image provider: {PROVIDER}, "
-          f"nano banana: {'gemini' if backend('nano_banana_2_1') is gen_gemini else 'stand-in'}, auth: {'on' if BASIC_AUTH else 'off'}, "
+          f"nano banana: {'gemini' if backend('nano_banana_2_1') is gen_gemini else 'stand-in'}, "
+          f"seedream: {'byteplus' if backend('seedream_5_5') is gen_seedream else 'stand-in'}, auth: {'on' if BASIC_AUTH else 'off'}, "
           f"limits: {PER_IP_HOUR}/ip/hour, {PER_DAY}/day)", flush=True)
     srv.serve_forever()

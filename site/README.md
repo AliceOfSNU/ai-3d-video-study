@@ -8,13 +8,13 @@
 python server.py            # http://localhost:8010/          실제 생성
                             #   GPT Image 2.6   = OpenAI gpt-image-2.6-sunburst (OPENAI_API_KEY)
                             #   Nano Banana 2.1 = Gemini gemini-nano-banana-2.1 (GEMINI_API_KEY, 결제가 켜진 프로젝트여야 함)
-                            #   Seedream 5.5    = GPT Image 2.6으로 대체 (아래 참고)
+                            #   Seedream 5.5    = BytePlus ModelArk dola-seedream-5-5-261028 (ARK_API_KEY, Ark 콘솔에서 모델 활성화 필요)
 STUDY_IMAGE_PROVIDER=mock python server.py 8011               # 비용 0 목업 생성
 ```
 
 - 운영진 미리보기: 주소 뒤에 `?preview=1`을 붙입니다(예: `http://localhost:8010/?preview=1`). 미리보기에서는 적은 내용, 체크, 이미지가 저장되지 않습니다.
-- 키(`OPENAI_API_KEY`, `GEMINI_API_KEY`)는 `STUDY_ENV_FILE`이 가리키는 파일에서 읽습니다. 지정하지 않으면 저장소 루트의 `.env`를 읽습니다. 키는 브라우저로 보내지 않습니다.
-- Gemini가 할당량 오류(429/403)를 내면 Nano Banana 요청은 GPT Image 2.6으로 대신 만들고 "개발용 대체" 표시를 붙입니다. 10분 동안은 Gemini를 다시 부르지 않습니다. 무료 등급 키는 이미지 할당량이 없어 항상 이렇게 됩니다.
+- 키(`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ARK_API_KEY`)는 `STUDY_ENV_FILE`이 가리키는 파일에서 읽습니다. 지정하지 않으면 저장소 루트의 `.env`를 읽습니다. 키는 브라우저로 보내지 않습니다.
+- Gemini나 ModelArk가 계정 문제로 거절하면 그 모델 요청은 GPT Image 2.6으로 대신 만들고 "개발용 대체" 표시를 붙입니다. 계정 문제란 할당량 없음, 결제 꺼짐, 모델 미활성화(ModelNotOpen) 같은 경우입니다. 10분 동안은 그 제공자를 다시 부르지 않습니다.
 
 ## 구조
 
@@ -40,8 +40,12 @@ STUDY_IMAGE_PROVIDER=mock python server.py 8011               # 비용 0 목업 
 | `ab` | 같은 참고 이미지 + 기본 문장 + A/B 한 줄씩(프리셋 칩)으로 두 장을 동시에 생성해 나란히 비교 |
 | `check` | 마무리 체크리스트 |
 | `pick` | 결과물 고르기 (이미지함에서 고르기, 직접 올리기, 내려받기) |
+| `table` | 정적인 표 (`head`, `rows`, `note`) |
+| `compare` | 프롬프트 하나로 세 모델을 동시에 생성해 이름을 가린 A·B·C로 보여 준다. 한 장을 고르고 이유 칩을 누르면 이름이 공개된다. 고른 결과는 `lv1:<유닛>:pick:<id>`에 저장. `promptFrom`(앞 유닛 프롬프트), `pairFrom`(짝 추천), `ref`(`prefer`: 앞 유닛에서 고른 이미지, `sample`: 건너뛴 사람용 예시), `showRef`(원본 같이 보기), `toggleRef`(원본과 번갈아 보기), `aspect: "ref"`(원본 비율) |
+| `stats` | 모델별 평균 생성 시간, 고른 횟수, 힉스필드 크레딧(`credits`, 비어 있으면 "확인 예정") |
+| `summary` | `compare` 결과로 채워지는 선택표, 기본 모델 고르기(이후 생성기의 기본값), 표를 PNG로 내려받기 |
 
-이미지에는 `tag`(person / place / style / mood / upload)가 붙습니다. 뒤 스텝은 이 태그로 앞 스텝의 결과를 찾습니다.
+이미지에는 `tag`(person / place / style / mood / cmp / upload)가 붙습니다. 뒤 스텝은 이 태그로 앞 스텝의 결과를 찾습니다.
 
 ## 생성 API 계약 (코워크크루가 구현할 부분)
 
@@ -66,4 +70,4 @@ GET  /api/images/jobs/<id>                                         # 페이지�
 
 `/api/images/generate`가 바로 `{"image": ...}`를 돌려줘도 페이지는 그대로 받습니다. 다만 위 이유로 작업 방식을 권합니다.
 
-모델 ID는 Higgsfield와 같습니다. 셋 다 참고 이미지(`image_references`)를 받습니다. 다만 Higgsfield 공개 REST API(`GET api.higgsfield.ai/models`, 96개, 2026-11-14 확인)에는 이 세 이미지 모델이 없어서, 실제 연결은 코워크크루가 쓰는 제공자에 맞춰야 합니다. Seedream은 바이트댄스 BytePlus ModelArk 같은 다른 제공자의 키가 있어야 합니다.
+모델 ID는 Higgsfield와 같습니다. 셋 다 참고 이미지(`image_references`)를 받습니다. 다만 Higgsfield 공개 REST API(`GET api.higgsfield.ai/models`, 96개, 2026-11-14 확인)에는 이 세 이미지 모델이 없어서, 실제 연결은 코워크크루가 쓰는 제공자에 맞춰야 합니다. Seedream은 바이트댄스 BytePlus ModelArk로 연결합니다. 장당 $0.020이고 260만 화소 이하 기준이며, 참고 이미지는 장당 $0.008입니다. 서버는 비율마다 약 157만 화소로 요청합니다.

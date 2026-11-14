@@ -7,7 +7,7 @@
 | 범위 | 상태 |
 |---|---|
 | Lv.1 유닛 1-1 "AI 이미지 모델 써보기" (6스텝) | 페이지 완성 |
-| Lv.1 유닛 1-2 "AI 이미지 모델 비교하기" (7스텝) | 기획만 ([lv1/readme.md](lv1/readme.md)) |
+| Lv.1 유닛 1-2 "AI 이미지 모델 비교하기" (7스텝) | 페이지 완성. 힉스필드 크레딧 값과 예시 비교 이미지는 아직 비어 있음 |
 | Lv.1 유닛 1-3 ~ 1-7 | 목록에만 "준비 중"으로 표시 |
 | Lv.2 ~ Lv.8 | 전체 개요만 ([common/plan.md](common/plan.md)) |
 
@@ -29,7 +29,7 @@ cd site
 STUDY_IMAGE_PROVIDER=mock python server.py     # http://localhost:8010/  자리표시 이미지, 비용 0
 ```
 
-실제 이미지를 만들려면 이 폴더(저장소 루트)에 `.env`를 두고 `OPENAI_API_KEY=...`(GPT Image 2.6), `GEMINI_API_KEY=...`(Nano Banana 2.1)를 넣습니다. `.env`는 `.gitignore`에 들어 있어 커밋되지 않습니다. 주소 뒤에 `?preview=1`을 붙이면 저장하지 않는 운영진 미리보기가 됩니다.
+실제 이미지를 만들려면 이 폴더(저장소 루트)에 `.env`를 두고 `OPENAI_API_KEY=...`(GPT Image 2.6), `GEMINI_API_KEY=...`(Nano Banana 2.1), `ARK_API_KEY=...`(Seedream 5.5)를 넣습니다. `.env`는 `.gitignore`에 들어 있어 커밋되지 않습니다. 주소 뒤에 `?preview=1`을 붙이면 저장하지 않는 운영진 미리보기가 됩니다.
 
 ## 코워크크루에 옮길 때 할 일
 
@@ -44,6 +44,6 @@ STUDY_IMAGE_PROVIDER=mock python server.py     # http://localhost:8010/  자리�
 |---|---|---|
 | GPT Image 2.6 (`gpt_image_2_6`) | OpenAI `gpt-image-2.6-sunburst` | 개발 서버에서 실제로 생성됨 |
 | Nano Banana 2.1 (`nano_banana_2_1`) | Gemini `gemini-nano-banana-2.1` | 결제가 켜진 Gemini 키가 필요함. 무료 등급 키는 이미지 할당량이 없음 |
-| Seedream 5.5 (`seedream_5_5`) | 없음 | 힉스필드 공개 API에 없음(2026-11-14 확인). BytePlus ModelArk 등 다른 제공자 키가 필요함 |
+| Seedream 5.5 (`seedream_5_5`) | BytePlus ModelArk `dola-seedream-5-5-261028` | Ark 콘솔에서 모델 활성화 필요. 장당 $0.020. 힉스필드 공개 API에는 없음 |
 
    키가 없는 모델은 개발 서버가 GPT Image 2.6로 대신 만들고 "개발용 대체" 표시를 붙입니다.
