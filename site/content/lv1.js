@@ -5,28 +5,28 @@
 // four places, and step 3 recommends the place that matches the person picked in step 2.
 const PERSON_EXAMPLES = [
   {
-    label: "20대 · 트렌치코트",
+    label: "20대 · 울코트",
     pair: "street",
     pairLabel: "길거리",
-    prompt: "20대 초반 한국 여성. 검은 단발머리에 가벼운 앞머리. 베이지 트렌치코트, 흰 니트, 연청 바지, 흰 운동화, 어깨에 작은 갈색 가방. 카메라를 보며 살짝 웃는 표정. 머리부터 발끝까지 보이는 전신, 정면에 가까운 자세. 밝은 회색 무지 배경. 부드러운 자연광, 실사 사진.",
+    prompt: "20대 초반 한국 여성. 검은 단발머리에 가벼운 앞머리. 카멜색 울 롱코트, 크림색 터틀넥 니트, 빨간 체크 머플러, 연청 바지, 흰 운동화, 어깨에 작은 갈색 가방. 카메라를 보며 살짝 웃는 표정. 머리부터 발끝까지 보이는 전신, 정면에 가까운 자세. 밝은 회색 무지 배경. 부드러운 자연광, 실사 사진.",
   },
   {
     label: "20대 · 숲속 여행자",
     pair: "forest",
     pairLabel: "숲",
-    prompt: "20대 후반 한국 남성 여행자. 덥수룩한 검은 머리와 짧은 수염. 모자가 달린 카키색 롱코트, 두툼한 니트 목도리, 낡은 갈색 가죽 부츠. 등에 큰 배낭을 메고 한 손에 작은 랜턴을 들었다. 호기심 어린 표정. 머리부터 발끝까지 보이는 전신, 정면. 연한 회색 무지 배경. 부드러운 조명, 실사 사진.",
+    prompt: "20대 후반 한국 남성 여행자. 덥수룩한 검은 머리와 짧은 수염. 모자가 달린 카키색 두꺼운 패딩 파카, 회색 털모자, 두툼한 니트 목도리와 털장갑, 낡은 갈색 가죽 방한 부츠. 등에 큰 배낭을 메고 한 손에 작은 랜턴을 들었다. 호기심 어린 표정. 머리부터 발끝까지 보이는 전신, 정면. 연한 회색 무지 배경. 부드러운 조명, 실사 사진.",
   },
   {
     label: "20대 · K-pop 아이돌",
     pair: "kpop",
     pairLabel: "K-pop 세트",
-    prompt: "20대 초반 한국 여성, K-pop 아이돌 스타일. 은색으로 염색한 긴 생머리. 반짝이는 은색 크롭 재킷, 검은 와이드 팬츠, 굵은 체인 목걸이, 두꺼운 밑창의 흰 부츠. 자신감 있는 눈빛으로 카메라를 본다. 머리부터 발끝까지 보이는 전신, 정면. 검은색 무지 배경. 깔끔한 스튜디오 조명, 실사 사진.",
+    prompt: "20대 초반 한국 여성, K-pop 아이돌 스타일. 은색으로 염색한 긴 생머리. 반짝이는 은색 숏패딩, 검은 와이드 팬츠, 굵은 체인 목걸이, 두꺼운 밑창의 흰 퍼 부츠. 자신감 있는 눈빛으로 카메라를 본다. 머리부터 발끝까지 보이는 전신, 정면. 검은색 무지 배경. 깔끔한 스튜디오 조명, 실사 사진.",
   },
   {
     label: "30대 · 회사원",
     pair: "office",
     pairLabel: "오피스",
-    prompt: "30대 한국 남성 회사원. 단정하게 넘긴 짧은 머리. 하늘색 셔츠에 남색 니트 조끼, 회색 슬랙스, 목에 건 사원증, 한 손에 텀블러. 조금 피곤하지만 친근한 미소. 머리부터 발끝까지 보이는 전신, 정면. 밝은 회색 무지 배경. 부드러운 사무실 조명, 실사 사진.",
+    prompt: "30대 한국 남성 회사원. 단정하게 넘긴 짧은 머리. 회색 터틀넥 니트에 차콜 슬랙스, 팔에 걸친 남색 울 코트, 목에 건 사원증, 한 손에 텀블러. 조금 피곤하지만 친근한 미소. 머리부터 발끝까지 보이는 전신, 정면. 밝은 회색 무지 배경. 부드러운 사무실 조명, 실사 사진.",
   },
 ];
 
@@ -34,22 +34,24 @@ const PLACE_EXAMPLES = [
   {
     key: "street",
     label: "한국의 길거리",
-    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 서울의 좁은 상점가 골목에서 횡단보도를 건너는 장면. 양옆에 한글 간판이 달린 가게들, 머리 위로 얽힌 전깃줄, 회색 보도블록. 인물은 화면 가운데 전신, 눈높이 카메라. 실사 사진.",
+    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 한겨울 오후, 서울의 좁은 상점가 골목에서 횡단보도를 건너는 장면. 양옆에 한글 간판이 달린 가게들, 머리 위로 얽힌 전깃줄, 길가와 지붕에 조금 남은 눈. 차가운 공기에 입김이 하얗게 보인다. 인물은 화면 가운데 전신, 눈높이 카메라. 실사 사진.",
   },
   {
     key: "forest",
     label: "신비로운 숲",
-    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 안개가 깔린 깊은 숲, 이끼 낀 거대한 나무 사이 오솔길을 걸으며 위를 올려다보는 장면. 나뭇잎 사이로 빛줄기가 내려온다. 전신, 조금 낮은 곳에서 올려다보는 카메라. 실사 사진.",
+    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 눈 덮인 깊은 겨울 숲, 하얀 눈이 쌓인 거대한 침엽수 사이 오솔길을 걸으며 위를 올려다보는 장면. 가지 사이로 차가운 빛줄기가 내려오고 공기 중에 눈가루가 반짝인다. 전신, 조금 낮은 곳에서 올려다보는 카메라. 실사 사진.",
   },
   {
     key: "kpop",
-    label: "K-pop 뮤비 세트",
-    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 실내 K-pop 뮤직비디오 세트. 반짝이는 검은 바닥, 벽을 따라 이어진 네온 라인 조명, 바닥에 깔린 옅은 연기. 인물이 세트 한가운데에서 안무 동작의 한 순간처럼 포즈를 잡는다. 전신, 정면 와이드. 실사 사진.",
+    label: "K-pop 뮤비 세트 · 다락방",
+    // our own set photo (made 2026-11-14, no people), attached as a second (location) reference
+    placeRef: { src: "assets/places/kpop_attic.jpg", label: "미리 만들어 둔 세트 사진 · 이 방에 내 인물을 넣어요" },
+    prompt: "첫 번째 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 두 번째 이미지는 장소 참고다: 이 다락방의 경사진 천장, 벽, 러그, 빈백, TV, 꼬마전구, 둥근 창을 그대로 쓴다. 창밖으로 눈이 내리는 겨울 오후, 꼬마전구가 따뜻하게 켜져 있다. 인물이 러그 위에서 안무 동작의 한 순간처럼 포즈를 잡는다. 전신, 정면 와이드. 실사 사진.",
   },
   {
     key: "office",
     label: "오피스 자리",
-    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 창가 사무실 책상에 앉아 노트북을 보다가 고개를 든 순간. 책상 위에 모니터, 서류 더미, 머그컵. 뒤로 다른 책상들이 흐릿하게 보인다. 허리 위가 보이는 미디엄 샷. 실사 사진.",
+    prompt: "첨부한 이미지의 인물을 그대로 둔다(얼굴, 머리, 옷이 같아야 한다). 창가 사무실 책상에 앉아 노트북을 보다가 고개를 든 순간. 창밖으로 눈이 내리는 겨울 오후. 책상 위에 모니터, 서류 더미, 김이 오르는 머그컵. 뒤로 다른 책상들이 흐릿하게 보인다. 허리 위가 보이는 미디엄 샷. 실사 사진.",
   },
 ];
 
@@ -71,13 +73,13 @@ const SHOT_EXAMPLES = [
 // step 4: the unit 1 place again, without people, with one short Korean text. `key` matches the person's pair.
 const TEXT_EXAMPLES = [
   { key: "street", label: "길거리 · 간판", pairLabel: "'청춘분식'",
-    prompt: "서울의 좁은 상점가 골목, 사람 없음. 가운데 분식집 간판에 '청춘분식'이라는 한글이 크게 적혀 있다. 양옆에 작은 가게들, 머리 위 전깃줄, 회색 보도블록. 맑은 오후 빛, 눈높이 카메라. 실사 사진." },
-  { key: "forest", label: "숲 · 표지판", pairLabel: "'안개숲 1km'",
-    prompt: "안개가 깔린 깊은 숲속 오솔길, 사람 없음. 길가의 낡은 나무 표지판에 '안개숲 1km'라는 한글이 새겨져 있다. 이끼 낀 거대한 나무들, 나뭇잎 사이로 내려오는 빛줄기. 실사 사진." },
-  { key: "kpop", label: "뮤비 세트 · LED", pairLabel: "'새벽 세시'",
-    prompt: "실내 K-pop 뮤직비디오 세트, 사람 없음. 무대 뒤 큰 LED 화면에 '새벽 세시'라는 한글이 빛난다. 반짝이는 검은 바닥, 네온 라인 조명, 옅은 연기. 정면 와이드. 실사 사진." },
+    prompt: "한겨울 서울의 좁은 상점가 골목, 사람 없음. 가운데 분식집 간판에 '청춘분식'이라는 한글이 크게 적혀 있다. 양옆에 작은 가게들, 머리 위 전깃줄, 길가와 지붕에 조금 남은 눈. 맑고 차가운 오후 빛, 눈높이 카메라. 실사 사진." },
+  { key: "forest", label: "숲 · 표지판", pairLabel: "'눈꽃숲 1km'",
+    prompt: "눈 덮인 깊은 겨울 숲속 오솔길, 사람 없음. 길가의 낡은 나무 표지판에 '눈꽃숲 1km'라는 한글이 새겨져 있고 표지판 위에 눈이 소복이 쌓였다. 눈 쌓인 거대한 침엽수들, 가지 사이로 내려오는 차가운 빛줄기. 실사 사진." },
+  { key: "kpop", label: "뮤비 세트 · TV", pairLabel: "'게임 시작'",
+    prompt: "K-pop 뮤직비디오 세트로 꾸민 작은 다락방, 사람 없음. 경사진 흰 나무 천장, 따뜻한 크림색 벽, 연보라 러그와 빈백. 낮은 원목 테이블 위 작은 브라운관 TV 화면에 '게임 시작'이라는 한글이 픽셀 글씨로 떠 있다. 벽에는 폴라로이드 사진과 꼬마전구만 있다. 둥근 창밖으로 눈이 내린다. 정면 와이드. 실사 사진." },
   { key: "office", label: "오피스 · 포스트잇", pairLabel: "'3시 회의'",
-    prompt: "창가 사무실 책상, 사람 없음. 모니터 가장자리에 붙은 노란 포스트잇에 '3시 회의'라고 손글씨로 적혀 있다. 노트북, 서류 더미, 머그컵, 뒤로 흐릿한 다른 책상들. 실사 사진." },
+    prompt: "창가 사무실 책상, 사람 없음. 모니터 가장자리에 붙은 노란 포스트잇에 '3시 회의'라고 손글씨로 적혀 있다. 노트북, 서류 더미, 김이 오르는 머그컵, 창밖으로 내리는 눈, 뒤로 흐릿한 다른 책상들. 실사 사진." },
 ];
 
 // step 5: change exactly one thing in the unit 1 place shot
@@ -94,15 +96,15 @@ const HF_CREDITS = { seedream_5_5: null, gpt_image_2_6: null, nano_banana_2_1: n
 const CREDITS_CHECKED = "";
 
 // pre-made comparisons (one per compare step), made 2026-11-14 with the three real models from the first example
-// of each step (trench-coat person / street pair). Generation seconds as measured then.
+// of each step (wool-coat person / street pair; the study runs in December, so winter clothes). Seconds as measured.
 const exampleSet = (id, label, ref, seconds) => ({
   label, ref, seconds,
   images: Object.fromEntries(["seedream_5_5", "gpt_image_2_6", "nano_banana_2_1"].map((m) => [m, `assets/examples/${id}_${m}.jpg`])),
 });
-const EXAMPLE_REAL = exampleSet("real", "트렌치코트 인물 프롬프트", null, { seedream_5_5: 12, gpt_image_2_6: 15, nano_banana_2_1: 15 });
-const EXAMPLE_IDENTITY = exampleSet("identity", "얼굴 클로즈업", "assets/sample_person.jpg", { seedream_5_5: 19, gpt_image_2_6: 18, nano_banana_2_1: 15 });
-const EXAMPLE_HANGUL = exampleSet("hangul", "길거리 · '청춘분식' 간판", null, { seedream_5_5: 13, gpt_image_2_6: 30, nano_banana_2_1: 15 });
-const EXAMPLE_EDIT = exampleSet("edit", "겉옷 색만 남색으로", "assets/sample_place.jpg", { seedream_5_5: 14, gpt_image_2_6: 28, nano_banana_2_1: 15 });
+const EXAMPLE_REAL = exampleSet("real", "울코트 인물 프롬프트", null, { seedream_5_5: 13, gpt_image_2_6: 21, nano_banana_2_1: 16 });
+const EXAMPLE_IDENTITY = exampleSet("identity", "얼굴 클로즈업", "assets/sample_person.jpg", { seedream_5_5: 16, gpt_image_2_6: 19, nano_banana_2_1: 13 });
+const EXAMPLE_HANGUL = exampleSet("hangul", "겨울 길거리 · '청춘분식' 간판", null, { seedream_5_5: 19, gpt_image_2_6: 29, nano_banana_2_1: 16 });
+const EXAMPLE_EDIT = exampleSet("edit", "겉옷 색만 남색으로", "assets/sample_place.jpg", { seedream_5_5: 22, gpt_image_2_6: 25, nano_banana_2_1: 13 });
 
 // unit 1 results that unit 2 builds on (store keys written by unit 1 blocks)
 const U1_PERSON_PROMPT = "lv1:u1:gen:person:prompt";
@@ -173,7 +175,7 @@ export const LEVEL = {
               parts: [
                 { label: "누가", text: "20대 초반 한국 여성", color: "a" },
                 { label: "얼굴 · 머리", text: "검은 단발머리, 가벼운 앞머리", color: "b" },
-                { label: "옷 · 소품", text: "베이지 트렌치코트, 흰 운동화, 작은 가방", color: "c" },
+                { label: "옷 · 소품", text: "카멜색 울 코트, 체크 머플러, 작은 가방", color: "c" },
                 { label: "표정 · 자세", text: "카메라를 보며 살짝 웃음", color: "d" },
                 { label: "구도", text: "머리부터 발끝까지 전신, 정면", color: "e" },
                 { label: "배경", text: "밝은 회색 무지 배경", color: "f" },
@@ -218,7 +220,8 @@ export const LEVEL = {
                 "스텝 2에서 만든 인물 사진이 <b>참고 이미지</b>로 자동으로 들어가요.",
                 "<b>인물과 어울리는 장소</b>를 골라요. 옷차림, 나이, 하는 일이 장소와 맞아야 자연스러워요. 회사원은 오피스, 아이돌은 뮤비 세트처럼요.",
                 "프롬프트 첫 문장에 <b>\"첨부한 인물을 그대로 둔다\"</b>를 꼭 넣어요. 이 문장이 없으면 다른 사람이 나오기 쉬워요.",
-                "장소는 <b>눈에 보이는 물건 세 가지</b> 이상으로 묘사해요. 예: 한글 간판, 전깃줄, 보도블록.",
+                "장소는 <b>눈에 보이는 물건 세 가지</b> 이상으로 묘사해요. 예: 한글 간판, 전깃줄, 길가에 쌓인 눈.",
+                "장소도 <b>사진으로</b> 넣을 수 있어요. K-pop 예시는 미리 만들어 둔 세트 사진(작은 다락방)이 <b>장소 참고 이미지</b>로 함께 들어가요. 글로 설명하는 것보다 훨씬 똑같이 나와요.",
               ],
             },
             {
@@ -227,7 +230,7 @@ export const LEVEL = {
               parts: [
                 { label: "인물 유지", text: "첨부한 인물을 그대로 둔다", color: "a" },
                 { label: "어디서 · 무엇을", text: "상점가 골목에서 횡단보도를 건넌다", color: "b" },
-                { label: "보이는 물건", text: "한글 간판, 전깃줄, 보도블록", color: "c" },
+                { label: "보이는 물건", text: "한글 간판, 전깃줄, 길가에 쌓인 눈", color: "c" },
                 { label: "카메라", text: "인물은 가운데 전신, 눈높이", color: "e" },
                 { label: "스타일", text: "실사 사진", color: "g" },
               ],

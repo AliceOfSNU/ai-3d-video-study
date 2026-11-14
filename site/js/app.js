@@ -333,10 +333,11 @@ function generatorBlock(b, ctx) {
       <div class="gobox"><span class="status"></span><button class="btn primary go">이미지 만들기</button></div></div>
     <div class="results"></div></div>`);
   const ta = node.querySelector(".prompt");
+  const exIdxKey = k(ctx, "gen", b.id, "exi");    // the example the prompt came from (its placeRef is attached)
   let saved = store.get(pkey, "");
   if (!saved && recommended) {
-    const rec = b.examples.find((ex) => ex.key === recommended);
-    if (rec) { saved = rec.prompt; store.set(pkey, saved); }
+    const ri = b.examples.findIndex((ex) => ex.key === recommended);
+    if (ri >= 0) { saved = b.examples[ri].prompt; store.set(pkey, saved); store.set(exIdxKey, ri); }
   }
   ta.value = saved;
   ta.oninput = () => store.set(pkey, ta.value);
@@ -344,10 +345,29 @@ function generatorBlock(b, ctx) {
     const ex = b.examples[+btn.dataset.i];
     ta.value = ex.prompt; store.set(pkey, ex.prompt);
     store.set(exkey, { label: ex.label, pair: ex.pair || ex.key || null });
+    store.set(exIdxKey, +btn.dataset.i);
     node.querySelectorAll(".ex").forEach((x) => x.classList.toggle("on", x === btn));
+    showPlace();
   }));
   const ref = b.ref ? refPicker(b, ctx, k(ctx, "gen", b.id, "ref")) : null;
   if (ref) node.querySelector(".slot-ref").appendChild(ref.node);
+  // location reference that belongs to an example (e.g. a set photo): second reference image, after the person
+  const placeRow = el(`<div class="refrow place-ref" hidden><div class="ref-thumb"></div><div class="ref-meta"><b>장소 참고 이미지</b>
+      <small class="ref-sub"></small><label class="use-place"><input type="checkbox" checked> 이 사진도 함께 넣기</label></div></div>`);
+  node.querySelector(".slot-ref").appendChild(placeRow);
+  const activePlace = () => { const ex = b.examples[store.get(exIdxKey, -1)]; return (ex && ex.placeRef) || null; };
+  function showPlace() {
+    const pr = activePlace();
+    placeRow.hidden = !pr;
+    if (pr) {
+      placeRow.querySelector(".ref-thumb").innerHTML = `<img src="${esc(pr.src)}" alt="">`;
+      placeRow.querySelector(".ref-sub").textContent = pr.label;
+      placeRow.querySelector("input").checked = true;
+    }
+  }
+  showPlace();
+  const exOn = store.get(exIdxKey, -1);
+  node.querySelectorAll(".ex").forEach((x) => x.classList.toggle("on", +x.dataset.i === exOn && b.examples[exOn].prompt === ta.value));
   const model = modelPicker(k(ctx, "gen", b.id, "model"));
   node.querySelector(".slot-models").appendChild(model.node);
   const aspect = aspectPicker(k(ctx, "gen", b.id, "aspect"), b.aspects, b.aspect);
@@ -368,6 +388,11 @@ function generatorBlock(b, ctx) {
       const r = await ref.current();
       if (!r && b.ref.required) return toast("참고 이미지가 없어요. 앞 스텝에서 먼저 만들어 주세요.");
       if (r) refs.push(r.dataUrl);
+    }
+    const pr = activePlace();
+    if (pr && placeRow.querySelector("input").checked) {
+      const img = await sampleImage(pr.src);
+      if (img) refs.push(img.dataUrl);
     }
     btn.disabled = true;
     status.start("만드는 중");
