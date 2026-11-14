@@ -1,0 +1,6 @@
+# keys never go in the repo: put .env in this folder (or set STUDY_ENV_FILE)
+.env
+__pycache__/
+*.pyc
+# another study's UI capture, used only as a local reference
+common/other_study.png
