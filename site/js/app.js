@@ -1,11 +1,11 @@
 // Study page renderer. Reads a LEVEL (content/*.js) and draws: header + progress, unit sidebar,
 // step tabs, the step's blocks, prev/next. All participant state goes through store.js.
-import { LEVEL, MODELS } from "../content/lv1.js";
+import { LEVEL, MODELS, WAN_RATES, VIDEO_SCENES, CAMERA_MOVES, SHOT_SIZES, NEGATIVES } from "../content/lv1.js";
 import * as store from "./store.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const TAG_NAMES = { person: "인물", place: "장소", style: "스타일", mood: "분위기", cmp: "모델 비교", upload: "올린 사진" };
+const TAG_NAMES = { person: "인물", place: "장소", style: "스타일", mood: "분위기", cmp: "모델 비교", upload: "올린 사진", video: "영상" };
 const modelName = (id) => (MODELS.find((m) => m.id === id) || {}).name || id || "";
 const DEFAULT_MODEL_KEY = `${LEVEL.id}:defaultModel`;      // chosen in unit 1-2's selection table
 
@@ -187,6 +187,8 @@ const ICONS = {
   place: '<svg viewBox="0 0 24 24"><path d="M3 20h18M5 20V9l7-5 7 5v11"/><path d="M10 20v-5h4v5"/></svg>',
   grid: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="5" height="14" rx="1"/><rect x="9.5" y="5" width="5" height="14" rx="1"/><rect x="16" y="5" width="5" height="14" rx="1"/></svg>',
   table: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg>',
+  video: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/></svg>',
+  note: '<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h5"/></svg>',
 };
 
 const BLOCKS = {
@@ -229,6 +231,38 @@ const BLOCKS = {
   ab: (b, ctx) => abBlock(b, ctx),
   pick: (b, ctx) => pickBlock(b, ctx),
   compare: (b, ctx) => compareBlock(b, ctx),
+  cards: (b) => el(`<div class="card"><h3>${esc(b.title)}</h3><div class="vcards">${b.items.map((c) => `
+      <div class="vcard"><b>${esc(c.ko)}</b><code>${esc(c.term || c.en)}</code><small>${esc(c.desc || "")}</small></div>`).join("")}</div></div>`),
+  hfguide: (b) => el(`<div class="card"><h3>${esc(b.title)}</h3><ol class="hf-steps">${b.steps.map((s, i) => `
+      <li><span class="hf-n">${i + 1}</span><div class="hf-body"><b>${esc(s.title)}</b><p>${esc(s.text)}</p>
+        ${s.img ? `<a href="${esc(s.img)}" target="_blank" rel="noopener"><img class="hf-shot" src="${esc(s.img)}" alt="${esc(s.title)} 화면"></a>` : ""}</div></li>`).join("")}</ol></div>`),
+  copychips: (b) => {
+    let lang = "ko";
+    const node = el(`<div class="card"><h3>${esc(b.title)}</h3><div class="presets lang"><button class="chip on" data-l="ko">한국어로</button>
+      <button class="chip" data-l="en">English</button></div><div class="presets items">${b.items.map((c, i) => `
+      <button class="chip" data-i="${i}" title="${esc(c.koText || c.en)}">${esc(c.ko)}</button>`).join("")}</div></div>`);
+    node.querySelectorAll(".lang .chip").forEach((c) => (c.onclick = () => {
+      lang = c.dataset.l;
+      node.querySelectorAll(".lang .chip").forEach((x) => x.classList.toggle("on", x === c));
+      node.querySelectorAll(".items .chip").forEach((x) => { const it = b.items[+x.dataset.i]; x.title = lang === "en" ? it.en : (it.koText || it.en); });
+    }));
+    node.querySelectorAll(".items .chip").forEach((c) => (c.onclick = async () => {
+      const it = b.items[+c.dataset.i];
+      const ok = await copyText(lang === "en" ? it.en : (it.koText || it.en));
+      toast(ok ? "복사했어요. 힉스필드 프롬프트 칸에 붙여넣으세요." : "복사하지 못했어요. 글자를 직접 골라 복사해 주세요.");
+    }));
+    return node;
+  },
+  videoex: (b) => {
+    const node = el(`<div class="card"><h3>${esc(b.title)}</h3><div class="vu-list">${b.items.map((v) => `
+      <figure class="vidcard"><video controls preload="metadata" playsinline src="${esc(v.src)}"></video>
+        <figcaption><span><b>${esc(v.label)}</b></span></figcaption><pre class="vid-prompt">${esc(v.prompt)}</pre></figure>`).join("")}</div>
+      ${b.note ? `<p class="note">${esc(b.note)}</p>` : ""}</div>`);
+    return node;
+  },
+  vbuilder: (b, ctx) => vbuilderBlock(b, ctx),
+  videoupload: (b, ctx) => videoUploadBlock(b, ctx),
+  vfinal: (b, ctx) => vfinalBlock(b, ctx),
   stats: (b, ctx) => statsBlock(b, ctx),
   summary: (b, ctx) => summaryBlock(b, ctx),
 };
@@ -804,7 +838,7 @@ function statsBlock(b, ctx) {
     node.querySelector("tbody").innerHTML = rows.map(([h, tds]) => `<tr><th>${h}</th>${tds.join("")}</tr>`).join("");
     const notes = [];
     if (imgs.length > real.length) notes.push("개발용 대체로 만든 이미지는 시간 계산에서 뺐어요.");
-    notes.push(b.checked ? `크레딧은 ${b.checked}에 힉스필드 화면에서 확인한 값이에요.` : "크레딧은 힉스필드 화면에서 확인해 채울 예정이에요.");
+    notes.push(b.checked ? `크레딧은 ${b.checked} 힉스필드 기준 장당 값이에요. ${b.creditNote || ""}` : "크레딧은 힉스필드 화면에서 확인해 채울 예정이에요.");
     node.querySelector(".note").textContent = notes.join(" ");
   })();
   return node;
@@ -891,6 +925,321 @@ async function summaryPng(rows, defModel) {
   return c.toDataURL("image/png");
 }
 
+// ---- unit 1-3: video prompt builder, video uploads, summary ---------------------------------------------------
+// The videos are made on higgsfield.ai with the participant's own credits. These blocks build the English prompt,
+// hand over the photos to upload there, and keep the returned MP4s (IndexedDB, as Blobs) with their settings.
+
+// navigator.clipboard exists only in secure contexts; the study server is plain http, so fall back to execCommand
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+  } catch { /* fall through */ }
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch { ok = false; }
+  ta.remove();
+  return ok;
+}
+
+// copy a prompt box; if the browser refuses, leave the text selected so Ctrl+C (Cmd+C) is one keystroke
+async function copyPrompt(box) {
+  const ok = await copyText(box.value);
+  if (ok) return toast("복사했어요. 힉스필드 프롬프트 칸에 붙여넣으세요.");
+  box.focus(); box.select();
+  toast("글자를 선택해 뒀어요. Ctrl+C(맥은 ⌘C)로 복사해 주세요.");
+}
+
+const credits = (res, dur) => Math.round((WAN_RATES[res] || 0) * (+dur || 0) * 100) / 100;
+const lc = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+
+// a photo to upload to Higgsfield: thumbnail, download button, "다른 사진" (pick from the gallery)
+function assetCard({ label, key, from, resolve, note }) {
+  const node = el(`<div class="asset"><div class="asset-thumb"></div><div class="asset-meta"><b>${esc(label)}</b>
+      <small class="asset-sub"></small><div class="ref-btns"><a class="btn sm primary dl">내려받기</a>
+      <button class="btn sm ghost swap">다른 사진</button></div></div></div>`);
+  async function show() {
+    let img = store.get(key) ? await refById(store.get(key)) : null;
+    if (!img) img = await resolve();
+    node.querySelector(".asset-thumb").innerHTML = img ? `<img src="${img.dataUrl}" alt="">` : '<div class="ref-empty">없음</div>';
+    node.querySelector(".asset-sub").textContent = !img ? "사진이 없어요"
+      : img.sample ? (note || "예시 사진") : `${TAG_NAMES[img.tag] || ""} · ${modelName(img.model) || "직접 올린 사진"}`;
+    const dl = node.querySelector(".dl");
+    dl.hidden = !img;
+    if (img) { dl.href = img.dataUrl; dl.download = `${label.split(":")[0].trim().replace(/[^0-9A-Za-z가-힣]+/g, "_")}.${(img.dataUrl.match(/^data:image\/(\w+)/) || [, "jpg"])[1].replace("jpeg", "jpg")}`; }
+  }
+  node.querySelector(".swap").onclick = () => pickImage(from.concat("upload"), async (img) => { store.set(key, img.id); await show(); });
+  show();
+  return node;
+}
+
+async function newestOf(tags) { return (await store.listImages((x) => tags.includes(x.tag)))[0] || null; }
+async function idOrNull(key) { const id = store.get(key); return id ? store.getImage(id) : null; }
+
+const DEFAULT_SCENE = () => {
+  const pex = store.get(`${LEVEL.id}:ex:person`);
+  return (pex && VIDEO_SCENES[pex.pair]) ? pex.pair : "street";
+};
+
+function sceneDefaults(scene, mode) {
+  const S = VIDEO_SCENES[scene];
+  return { scene, action: 0, detail: 0, camera: mode === "reference" ? 1 : 0, shot: mode === "reference" ? 0 : -1,
+    noDialogue: true, noMusic: !S.music, negs: mode === "reference" ? [0, 1, 2, 3] : [], person: S.person, place: S.place,
+    personKo: S.personKo, placeKo: S.placeKo, lang: "ko", prompt: "", edited: false };
+}
+
+// Korean is the default: Wan 3.0 officially lists Chinese and English, but our test (2026-11-14) followed a Korean
+// prompt well (it even kept "fixed camera" better than the English twin). English stays one tap away.
+function assemble(st, mode) {
+  const S = VIDEO_SCENES[st.scene];
+  const ko = st.lang !== "en";
+  const out = [];
+  const negs = st.negs.map((i) => NEGATIVES[i]).filter(Boolean);
+  const act = S.actions[st.action], det = S.details[st.detail], cam = CAMERA_MOVES[st.camera], shot = SHOT_SIZES[st.shot];
+  if (ko) {
+    if (mode === "reference") {
+      out.push(`Image 1은 주인공이다: ${(st.personKo || S.personKo).trim()}.`, `Image 2는 장소다: ${(st.placeKo || S.placeKo).trim()}.`,
+        "얼굴, 머리, 옷은 Image 1과 똑같이 유지한다.");
+      if (shot) out.push(shot.koSentence);
+    }
+    out.push(`${S.subjectKo} ${act.ko}.`);
+    if (det) out.push(`${det.ko}.`);
+    out.push(cam.koSentence, `소리: ${S.sound.ko}.`);
+    if (st.noDialogue) out.push("대사 없음.");
+    if (st.noMusic) out.push("배경음악 없음.");
+    if (negs.length) out.push(`빼기 목록: ${negs.map((n) => n.ko).join(", ")}.`);
+  } else {
+    if (mode === "reference") {
+      out.push(`Image 1 is the main character: ${st.person.trim()}.`, `Image 2 is the location: ${st.place.trim()}.`,
+        "Keep the face, hair and outfit consistent with Image 1.");
+      if (shot) out.push(shot.en);
+    }
+    out.push(`${S.subject} ${act.en}.`);
+    if (det) out.push(det.en);
+    out.push(cam.en, `Sound: ${S.sound.en}.`);
+    if (st.noDialogue) out.push("No dialogue.");
+    if (st.noMusic) out.push("No background music.");
+    if (negs.length) out.push(`Negative prompt list: ${negs.map((n) => n.en).join(", ")}.`);
+  }
+  return out.join(" ");
+}
+
+function chipRow(label, items, isOn, onPick, opts = {}) {
+  const row = el(`<div class="vb-group"><small>${esc(label)}</small><div class="presets"></div></div>`);
+  const host = row.querySelector(".presets");
+  items.forEach((it, i) => {
+    const c = el(`<button class="chip ${isOn(i) ? "on" : ""}">${esc(it.ko)}</button>`);
+    if (opts.title) c.title = it.en;
+    c.onclick = () => onPick(i);
+    host.appendChild(c);
+  });
+  return row;
+}
+
+function vbuilderBlock(b, ctx) {
+  const node = el(`<div class="card vb"></div>`);
+  if (b.mode === "final") { renderFinal(); return node; }
+
+  let st = store.get(b.stateKey) || sceneDefaults(DEFAULT_SCENE(), b.mode);
+  const save = () => store.set(b.stateKey, st);
+
+  function render() {
+    const S = VIDEO_SCENES[st.scene];
+    const cost = credits("480p", 5);
+    node.innerHTML = `<h3>프롬프트 만들기 · ${b.mode === "reference" ? "참고 이미지 방식" : "첫 프레임 방식"}</h3>
+      <div class="vb-settings">${["Wan 3.0", b.mode === "reference" ? "레퍼런스 탭" : "프레임 탭", "480p", "5초", "16:9", "소리 켬", "생각하기 끔"].map((s) => `<span>${s}</span>`).join("")}
+        <span class="cost">${cost}크레딧</span></div>
+      <h4 class="vb-h">힉스필드에 올릴 사진</h4><div class="vb-assets"></div>
+      <div class="vb-chips"></div>
+      <label class="lbl">프롬프트 <small>복사해서 힉스필드 프롬프트 칸에 붙여넣어요. 직접 고쳐도 돼요.</small></label>
+      <textarea class="prompt vb-out" rows="5"></textarea>
+      <p class="vb-ko"></p>
+      <div class="row between"><small class="muted">칩을 누르면 문장이 다시 조립돼요.</small>
+        <button class="btn primary copy">프롬프트 복사</button></div>`;
+    const assets = node.querySelector(".vb-assets");
+    if (b.mode === "firstframe") {
+      assets.appendChild(assetCard({ label: "첫 프레임: 내 장소 샷", key: `${b.stateKey}:a0`, from: ["place", "style", "mood"],
+        note: "예시 장소 사진 (유닛 1을 건너뛴 경우)",
+        resolve: async () => (await idOrNull("lv1:u1:pick:unit1pick:place")) || (await newestOf(["place", "style", "mood"])) || sampleImage("assets/sample_place.jpg") }));
+    } else {
+      assets.appendChild(assetCard({ label: "Image 1: 내 인물 샷", key: `${b.stateKey}:a1`, from: ["person"],
+        note: "예시 인물 사진 (유닛 1을 건너뛴 경우)",
+        resolve: async () => (await idOrNull("lv1:u1:pick:unit1pick:person")) || (await newestOf(["person"])) || sampleImage("assets/sample_person.jpg") }));
+      const fallback = { kpop: "assets/places/kpop_attic.jpg", street: "assets/examples/hangul_nano_banana_2_1.jpg" }[st.scene];
+      assets.appendChild(assetCard({ label: "Image 2: 장소 사진 (사람 없는 것)", key: `${b.stateKey}:a2:${st.scene}`, from: ["cmp", "place", "style", "mood"],
+        note: "예시 장소 사진",
+        resolve: async () => {
+          const hangul = store.get("lv1:u2:pick:hangul");
+          return (hangul && (await store.getImage(hangul.image))) || (fallback && (await sampleImage(fallback)))
+            || (await idOrNull("lv1:u1:pick:unit1pick:place")) || sampleImage("assets/sample_place.jpg");
+        } }));
+    }
+    const chips = node.querySelector(".vb-chips");
+    const pick = (patch) => { st = { ...st, ...patch, edited: false }; save(); render(); };
+    chips.appendChild(chipRow("언어", [{ ko: "한국어" }, { ko: "English" }], (i) => (i === 0 ? st.lang !== "en" : st.lang === "en"),
+      (i) => pick({ lang: i === 0 ? "ko" : "en" })));
+    chips.appendChild(chipRow("장면", Object.entries(VIDEO_SCENES).map(([k, v]) => ({ k, ko: v.label })), (i) => Object.keys(VIDEO_SCENES)[i] === st.scene,
+      (i) => { const k = Object.keys(VIDEO_SCENES)[i]; if (k !== st.scene) { st = sceneDefaults(k, b.mode); save(); render(); } }));
+    if (b.mode === "reference") {
+      const en = st.lang === "en";
+      const who = el(`<div class="vb-group"><small>인물 특징 (Image 1) · 내 인물과 다르면 고쳐 주세요</small><textarea class="prompt small" rows="2"></textarea>
+        <small>장소 (Image 2)</small><textarea class="prompt small" rows="1"></textarea></div>`);
+      const [tp, tl] = who.querySelectorAll("textarea");
+      tp.value = en ? st.person : (st.personKo || S.personKo); tl.value = en ? st.place : (st.placeKo || S.placeKo);
+      tp.onchange = () => pick(en ? { person: tp.value } : { personKo: tp.value });
+      tl.onchange = () => pick(en ? { place: tl.value } : { placeKo: tl.value });
+      chips.appendChild(who);
+      chips.appendChild(chipRow("샷 크기", SHOT_SIZES, (i) => i === st.shot, (i) => pick({ shot: i }), { title: true }));
+    }
+    chips.appendChild(chipRow("동작 (하나만)", S.actions, (i) => i === st.action, (i) => pick({ action: i }), { title: true }));
+    chips.appendChild(chipRow("디테일 (선택)", S.details.concat([{ ko: "없음", en: "" }]), (i) => (i === S.details.length ? st.detail < 0 : i === st.detail),
+      (i) => pick({ detail: i === S.details.length ? -1 : i }), { title: true }));
+    chips.appendChild(chipRow("카메라 (하나만)", CAMERA_MOVES, (i) => i === st.camera, (i) => pick({ camera: i }), { title: true }));
+    chips.appendChild(chipRow(`소리: ${S.sound.ko}`, [{ ko: "대사 없음" }, { ko: "배경음악 없음" }],
+      (i) => (i === 0 ? st.noDialogue : st.noMusic), (i) => pick(i === 0 ? { noDialogue: !st.noDialogue } : { noMusic: !st.noMusic })));
+    chips.appendChild(chipRow("빼기 목록 (여러 개)", NEGATIVES, (i) => st.negs.includes(i),
+      (i) => pick({ negs: st.negs.includes(i) ? st.negs.filter((x) => x !== i) : st.negs.concat(i).sort() }), { title: true }));
+
+    const out = node.querySelector(".vb-out");
+    const built = assemble(st, b.mode);
+    if (!st.edited || !st.prompt) { st.prompt = built; save(); }
+    out.value = st.prompt;
+    node.querySelector(".vb-ko").textContent = (st.lang === "en" ? "" : "Wan 3.0의 공식 지원 언어는 영어·중국어예요. 결과가 이상하면 English로 바꿔 복사해 보세요. ")
+      + (st.edited ? "직접 고친 내용이 있어요. 칩을 누르면 새로 조립돼요." : "");
+    out.oninput = () => { st.prompt = out.value; st.edited = true; save(); };
+    node.querySelector(".copy").onclick = () => copyPrompt(out);
+  }
+
+  // final: start from the first-frame or reference prompt, 720p, 5 or 10 s (10 s adds a second action)
+  function renderFinal() {
+    let fs = store.get(b.stateKey) || { base: "firstframe", dur: 5, action2: -1, prompt: "", edited: false };
+    const saveF = () => store.set(b.stateKey, fs);
+    const baseSt = store.get(b.from[fs.base]) || sceneDefaults(DEFAULT_SCENE(), fs.base);
+    const S = VIDEO_SCENES[baseSt.scene];
+    const basePrompt = baseSt.prompt || assemble(baseSt, fs.base);
+    const baseKo = baseSt.lang !== "en";
+    const others = S.actions.map((a, i) => ({ ...a, i })).filter((a) => a.i !== baseSt.action);
+    let built = basePrompt;
+    if (fs.dur === 10 && others[fs.action2]) {
+      const a2 = others[fs.action2];
+      built = baseKo ? basePrompt.replace(/(소리: )/, `그다음 ${S.subjectKo} ${a2.ko}. $1`)
+        : basePrompt.replace(/(Sound: )/, `Then ${lc(S.subject)} ${a2.en}. $1`);
+    }
+    if (!fs.edited || !fs.prompt) { fs.prompt = built; saveF(); }
+    node.innerHTML = `<h3>프롬프트 만들기 · 마지막 한 편</h3>
+      <div class="vb-settings">${["Wan 3.0", fs.base === "reference" ? "레퍼런스 탭" : "프레임 탭", "720p", `${fs.dur}초`, "16:9", "소리 켬", "생각하기 켬"].map((s) => `<span>${s}</span>`).join("")}
+        <span class="cost">${credits("720p", fs.dur)}크레딧</span></div>
+      <div class="vb-chips"></div>
+      <h4 class="vb-h">힉스필드에 올릴 사진</h4><div class="vb-assets"></div>
+      <label class="lbl">프롬프트 <small>스텝 ${fs.base === "reference" ? 5 : 4}에서 만든 문장이에요. 고친 게 있다면 그대로 이어져요.</small></label>
+      <textarea class="prompt vb-out" rows="5"></textarea>
+      <div class="row between"><small class="muted">10초로 하면 동작을 하나 더 넣어요.</small><button class="btn primary copy">프롬프트 복사</button></div>`;
+    const chips = node.querySelector(".vb-chips");
+    const pickF = (patch) => { fs = { ...fs, ...patch, edited: false, prompt: "" }; saveF(); renderFinal(); };
+    chips.appendChild(chipRow("어느 방식으로", [{ ko: "첫 프레임 (스텝 4)" }, { ko: "참고 이미지 (스텝 5)" }],
+      (i) => (i === 0 ? fs.base === "firstframe" : fs.base === "reference"), (i) => pickF({ base: i === 0 ? "firstframe" : "reference", action2: -1 })));
+    chips.appendChild(chipRow("길이", [{ ko: "5초 (8.75크레딧)" }, { ko: "10초 (17.5크레딧)" }], (i) => fs.dur === (i === 0 ? 5 : 10),
+      (i) => pickF({ dur: i === 0 ? 5 : 10, action2: i === 0 ? -1 : Math.max(fs.action2, 0) })));
+    if (fs.dur === 10) chips.appendChild(chipRow("두 번째 동작", others, (i) => i === fs.action2, (i) => pickF({ action2: i }), { title: true }));
+    const assets = node.querySelector(".vb-assets");
+    const keyBase = b.from[fs.base];
+    if (fs.base === "firstframe") {
+      assets.appendChild(assetCard({ label: "첫 프레임: 내 장소 샷", key: `${keyBase}:a0`, from: ["place", "style", "mood"], note: "예시 장소 사진",
+        resolve: async () => (await idOrNull("lv1:u1:pick:unit1pick:place")) || (await newestOf(["place", "style", "mood"])) || sampleImage("assets/sample_place.jpg") }));
+    } else {
+      assets.appendChild(assetCard({ label: "Image 1: 내 인물 샷", key: `${keyBase}:a1`, from: ["person"], note: "예시 인물 사진",
+        resolve: async () => (await idOrNull("lv1:u1:pick:unit1pick:person")) || (await newestOf(["person"])) || sampleImage("assets/sample_person.jpg") }));
+      const fallback = { kpop: "assets/places/kpop_attic.jpg", street: "assets/examples/hangul_nano_banana_2_1.jpg" }[baseSt.scene];
+      assets.appendChild(assetCard({ label: "Image 2: 장소 사진", key: `${keyBase}:a2:${baseSt.scene}`, from: ["cmp", "place", "style", "mood"], note: "예시 장소 사진",
+        resolve: async () => {
+          const hangul = store.get("lv1:u2:pick:hangul");
+          return (hangul && (await store.getImage(hangul.image))) || (fallback && (await sampleImage(fallback)))
+            || (await idOrNull("lv1:u1:pick:unit1pick:place")) || sampleImage("assets/sample_place.jpg");
+        } }));
+    }
+    const out = node.querySelector(".vb-out");
+    out.value = fs.prompt;
+    out.oninput = () => { fs.prompt = out.value; fs.edited = true; saveF(); };
+    node.querySelector(".copy").onclick = () => copyPrompt(out);
+  }
+
+  render();
+  return node;
+}
+
+const VIDEO_LABELS = { ff: "첫 프레임", ref: "참고 이미지", fix: "고친 영상", final: "최종" };
+
+function videoCard(v, { onDelete, big = false } = {}) {
+  const url = v.blob ? URL.createObjectURL(v.blob) : "";
+  const t = new Date(v.createdAt);
+  const node = el(`<figure class="vidcard ${big ? "big" : ""}"><video controls preload="metadata" playsinline src="${url}"></video>
+    <figcaption><span><b>${esc(VIDEO_LABELS[v.gen] || "영상")}</b> · ${esc(v.res)} · ${esc(v.dur)}초 · ${credits(v.res, v.dur)}크레딧</span>
+      <span class="muted">${t.getHours()}:${String(t.getMinutes()).padStart(2, "0")}</span></figcaption>
+    <div class="vid-btns">${v.prompt ? '<button class="btn sm ghost pr">프롬프트</button>' : ""}
+      <a class="btn sm ghost" href="${url}" download="${esc(v.name || "video.mp4")}">내려받기</a>
+      ${onDelete ? '<button class="btn sm ghost del">지우기</button>' : ""}</div>
+    ${v.prompt ? `<pre class="vid-prompt" hidden>${esc(v.prompt)}</pre>` : ""}</figure>`);
+  if (v.prompt) node.querySelector(".pr").onclick = () => { const p = node.querySelector(".vid-prompt"); p.hidden = !p.hidden; };
+  if (onDelete) node.querySelector(".del").onclick = async () => { if (confirm("이 영상을 지울까요?")) { await store.deleteImage(v.id); onDelete(); refreshGalleryCount(); } };
+  return node;
+}
+
+function videoUploadBlock(b, ctx) {
+  const skey = k(ctx, "vu", b.id, "settings");
+  let set = store.get(skey) || { res: b.res, dur: b.dur };
+  const node = el(`<div class="card vu"><h3>${esc(b.label)} 올리기</h3>
+    <p class="hint">힉스필드에서 내려받은 MP4를 올려요. 만들 때 고른 설정도 맞춰 주면 쓴 크레딧이 계산돼요.</p>
+    <div class="row"><label class="btn primary">MP4 올리기<input type="file" accept="video/*" hidden></label>
+      <span class="vu-set">해상도 <select class="res">${Object.keys(WAN_RATES).map((r) => `<option ${r === set.res ? "selected" : ""}>${r}</option>`).join("")}</select>
+        길이 <select class="dur">${[5, 10, 15].map((d) => `<option value="${d}" ${d === +set.dur ? "selected" : ""}>${d}초</option>`).join("")}</select>
+        <b class="cr"></b></span></div>
+    <div class="vu-list"></div></div>`);
+  const cr = node.querySelector(".cr");
+  const showCr = () => { cr.textContent = `= ${credits(set.res, set.dur)}크레딧`; };
+  node.querySelector(".res").onchange = (e) => { set.res = e.target.value; store.set(skey, set); showCr(); };
+  node.querySelector(".dur").onchange = (e) => { set.dur = +e.target.value; store.set(skey, set); showCr(); };
+  showCr();
+  const list = node.querySelector(".vu-list");
+  const show = async () => {
+    const vids = await store.listImages((x) => x.kind === "video" && x.unit === ctx.unit.id && x.gen === b.id);
+    list.innerHTML = vids.length ? "" : '<p class="empty">아직 올린 영상이 없어요.</p>';
+    vids.forEach((v, i) => list.appendChild(videoCard(v, { onDelete: show, big: i === 0 })));
+  };
+  node.querySelector("input[type=file]").onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 300 * 1024 * 1024) return toast("파일이 너무 커요(300MB 넘음). 짧게 자르거나 낮은 해상도로 내려받아 주세요.");
+    const ps = b.promptFrom ? store.get(b.promptFrom) : null;
+    await store.saveImage({ kind: "video", tag: "video", gen: b.id, level: LEVEL.id, unit: ctx.unit.id, step: ctx.step.id,
+      res: set.res, dur: set.dur, prompt: (ps && ps.prompt) || "", name: f.name, mime: f.type, blob: f });
+    e.target.value = "";
+    toast("영상을 올렸어요.");
+    await show(); refreshGalleryCount();
+  };
+  show();
+  return node;
+}
+
+function vfinalBlock(b, ctx) {
+  const node = el(`<div class="card vfinal"><h3>내 첫 영상</h3><div class="vf-main"></div><h4 class="vb-h">오늘 쓴 크레딧</h4>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>단계</th><th>설정</th><th>크레딧</th></tr></thead><tbody></tbody></table></div>
+    <p class="note"></p></div>`);
+  (async () => {
+    const vids = await store.listImages((x) => x.kind === "video" && x.unit === ctx.unit.id);
+    const main = node.querySelector(".vf-main");
+    const best = b.order.map((g) => vids.find((v) => v.gen === g)).find(Boolean);
+    if (best) main.appendChild(videoCard(best, { big: true }));
+    else main.innerHTML = '<p class="empty">아직 올린 영상이 없어요. 스텝 7에서 마지막 한 편을 올려 주세요.</p>';
+    if (best && best.prompt) main.appendChild(el(`<div class="vf-prompt"><small>이 영상의 프롬프트</small><pre>${esc(best.prompt)}</pre></div>`));
+    const rows = vids.slice().reverse();
+    node.querySelector("tbody").innerHTML = rows.length ? rows.map((v) => `<tr><th>${esc(VIDEO_LABELS[v.gen] || v.gen)}</th><td>${esc(v.res)} · ${esc(v.dur)}초</td><td>${credits(v.res, v.dur)}</td></tr>`).join("")
+      : '<tr><td colspan="3" class="muted">올린 영상이 없어요</td></tr>';
+    const total = Math.round(rows.reduce((a, v) => a + credits(v.res, v.dur), 0) * 100) / 100;
+    node.querySelector(".note").textContent = rows.length ? `합계 ${total}크레딧 (올린 영상의 설정으로 계산했어요. 올리지 않은 시도는 빠져 있어요.)` : "";
+  })();
+  return node;
+}
+
 // ---- images: cards, picker, gallery, lightbox ---------------------------------------------------------------
 function fileName(img, stem) {
   const ext = (img.dataUrl.match(/^data:image\/(\w+)/) || [, "png"])[1].replace("jpeg", "jpg");
@@ -940,12 +1289,13 @@ async function pickImage(tags, onPick) {
 
 async function openGallery() {
   const imgs = await store.listImages();
-  const groups = ["person", "place", "style", "mood", "cmp", "upload"].map((t) => ({ t, items: imgs.filter((x) => x.tag === t) })).filter((g) => g.items.length);
-  const m = modal(`<button class="mclose">×</button><h3>내 이미지함 <small class="muted">${imgs.length}장</small></h3>
-    ${groups.length ? groups.map((g) => `<h4>${TAG_NAMES[g.t]}</h4><div class="gal-grid" data-t="${g.t}"></div>`).join("") : '<p class="empty">아직 만든 이미지가 없어요.</p>'}`);
+  const groups = ["video", "person", "place", "style", "mood", "cmp", "upload"].map((t) => ({ t, items: imgs.filter((x) => x.tag === t) })).filter((g) => g.items.length);
+  const m = modal(`<button class="mclose">×</button><h3>내 이미지함 <small class="muted">${imgs.length}개</small></h3>
+    ${groups.length ? groups.map((g) => `<h4>${TAG_NAMES[g.t]}</h4><div class="gal-grid ${g.t === "video" ? "vids" : ""}" data-t="${g.t}"></div>`).join("") : '<p class="empty">아직 만든 이미지가 없어요.</p>'}`);
   m.querySelector(".modal-box").classList.add("wide");
   groups.forEach((g) => {
     const grid = m.querySelector(`.gal-grid[data-t="${g.t}"]`);
+    if (g.t === "video") { g.items.forEach((v) => grid.appendChild(videoCard(v, { onDelete: () => { m.remove(); openGallery(); render(); } }))); return; }
     g.items.forEach((img) => grid.appendChild(imageCard(img, {
       blind: img.tag === "cmp" && store.get(openKeyOf(img.unit, img.gen)) === img.batch,   // not picked yet: no peeking
       label: img.tag === "cmp" ? img.slot : "",

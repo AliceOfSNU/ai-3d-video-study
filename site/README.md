@@ -43,6 +43,13 @@ STUDY_IMAGE_PROVIDER=mock python server.py 8011               # 비용 0 목업 
 | `table` | 정적인 표 (`head`, `rows`, `note`) |
 | `compare` | 프롬프트 하나로 세 모델을 동시에 생성해 이름을 가린 A·B·C로 보여 준다. 한 장을 고르고 이유 칩을 누르면 이름이 공개된다. 고른 결과는 `lv1:<유닛>:pick:<id>`에 저장. `promptFrom`(앞 유닛 프롬프트), `pairFrom`(짝 추천), `ref`(`prefer`: 앞 유닛에서 고른 이미지, `sample`: 건너뛴 사람용 예시), `showRef`(원본 같이 보기), `toggleRef`(원본과 번갈아 보기), `aspect: "ref"`(원본 비율) |
 | `compare`의 `example` | 운영진이 미리 만든 세 모델 결과(`site/assets/examples/`), 접힌 채로 이름과 생성 시간을 보여 준다 |
+| `cards` | 용어 카드 그리드 (한국어, 영어 용어, 한 줄 뜻) |
+| `hfguide` | 힉스필드 화면 순서. 단계마다 `img`(화면 캡처, `assets/hf/`)를 넣을 수 있고, 없으면 글만 보인다. 사진을 누르면 원본 크기로 열린다 |
+| `copychips` | 눌러서 복사하는 문장 칩 (한국어/영어 전환) |
+| `vbuilder` | 영상 프롬프트 빌더. 장면·동작·카메라·소리·빼기 칩으로 한국어(기본) 또는 영어 문장을 조립하고 복사한다. 힉스필드에 올릴 사진을 내려받기 버튼과 함께 보여 준다. `mode`: firstframe / reference / final. 복사는 http에서 클립보드 API가 없어 execCommand로 하고, 막히면 글자를 선택해 둔다 |
+| `videoupload` | 힉스필드에서 받은 MP4를 올려 IndexedDB에 Blob으로 저장. 해상도·길이로 크레딧을 계산한다 |
+| `videoex` | 운영진 예시 영상과 그 프롬프트 |
+| `vfinal` | 마무리: 최종 영상, 프롬프트, 올린 영상들의 크레딧 합계 |
 | `stats` | 모델별 평균 생성 시간, 고른 횟수, 힉스필드 크레딧(`credits`, 비어 있으면 "확인 예정") |
 | `summary` | `compare` 결과로 채워지는 선택표, 기본 모델 고르기(이후 생성기의 기본값), 표를 PNG로 내려받기 |
 

@@ -92,8 +92,9 @@ const EDIT_EXAMPLES = [
 
 // step 6: Higgsfield credits per image. The Higgsfield API does not expose prices: fill these in from the
 // Higgsfield image generator screen (null shows "확인 예정") and set CREDITS_CHECKED to the date.
-const HF_CREDITS = { seedream_5_5: null, gpt_image_2_6: null, nano_banana_2_1: null };
-const CREDITS_CHECKED = "";
+const HF_CREDITS = { seedream_5_5: 3.5, gpt_image_2_6: 0.25, nano_banana_2_1: 1.5 };
+const CREDITS_CHECKED = "2026-11-14";
+const CREDITS_NOTE = "설정은 힉스필드 기본값(Seedream 2K, GPT Image 1K·low, Nano Banana 1K)이에요. Seedream을 1K로 내리면 2.5, GPT Image를 medium 품질로 올리면 0.5크레딧이에요.";
 
 // pre-made comparisons (one per compare step), made 2026-11-14 with the three real models from the first example
 // of each step (wool-coat person / street pair; the study runs in December, so winter clothes). Seconds as measured.
@@ -110,6 +111,126 @@ const EXAMPLE_EDIT = exampleSet("edit", "겉옷 색만 남색으로", "assets/sa
 const U1_PERSON_PROMPT = "lv1:u1:gen:person:prompt";
 const U1_PICK_PERSON = "lv1:u1:pick:unit1pick:person";
 const U1_PICK_PLACE = "lv1:u1:pick:unit1pick:place";
+
+// ---- unit 1-3 (first video on Higgsfield, Wan 3.0) -------------------------------------------------------
+// Videos are made on higgsfield.ai with each participant's own credits; the page builds the prompt, hands over
+// the photos to upload, and collects the result. Credits per second from Higgsfield's cost check (2026-11-14).
+export const WAN_RATES = { "480p": 1, "720p": 1.75, "1080p": 3.5 };
+
+// Per scene (= unit 1 pair key): English prompt parts with their Korean meaning. Wan 3.0 officially takes
+// Chinese and English prompts, so the page assembles English and shows the Korean beside it.
+export const VIDEO_SCENES = {
+  street: {
+    label: "길거리",
+    subject: "The woman",
+    subjectKo: "여자가",
+    personKo: "검은 단발머리에 가벼운 앞머리, 카멜색 울 롱코트, 크림색 터틀넥, 빨간 체크 머플러를 한 20대 초반 한국 여성",
+    placeKo: "눈이 조금 남은 한겨울 서울의 좁은 상점가 골목, 한글 간판들",
+    person: "a Korean woman in her early 20s with a short black bob and light bangs, a camel wool long coat, a cream turtleneck and a red check scarf",
+    place: "a narrow Seoul shopping alley in winter, with leftover snow and Korean shop signs",
+    actions: [
+      { ko: "천천히 횡단보도를 건너다 가운데서 멈춰 카메라를 본다", en: "slowly walks across the crosswalk, stops in the middle and looks into the camera" },
+      { ko: "언 손을 비비며 하얀 입김을 내쉰다", en: "rubs her cold hands together and breathes out a puff of white fog" },
+      { ko: "바람에 목도리가 날리자 살짝 웃으며 돌아선다", en: "smiles a little and turns around as the wind lifts her scarf" },
+    ],
+    details: [
+      { ko: "차가운 공기에 입김이 퍼진다", en: "Her breath fogs in the cold air." },
+      { ko: "작은 눈송이가 흩날린다", en: "Small snowflakes drift down." },
+    ],
+    sound: { ko: "조용한 골목 소음과 눈 밟는 발소리", en: "quiet alley ambience and footsteps on the snow" },
+    music: false,
+  },
+  forest: {
+    label: "숲",
+    subject: "The traveler",
+    subjectKo: "여행자가",
+    personKo: "덥수룩한 검은 머리와 짧은 수염, 카키색 두꺼운 패딩 파카, 회색 털모자, 큰 배낭과 작은 랜턴을 든 20대 후반 한국 남성 여행자",
+    placeKo: "눈 덮인 겨울 침엽수 숲속 오솔길",
+    person: "a Korean male traveler in his late 20s with messy black hair and a short beard, a thick khaki hooded parka, a gray knit hat, a big backpack and a small lantern",
+    place: "a snowy conifer forest path in winter",
+    actions: [
+      { ko: "눈길을 천천히 걸으며 위를 올려다본다", en: "walks slowly along the snowy path and looks up at the trees" },
+      { ko: "멈춰서 랜턴을 들어 주위를 둘러본다", en: "stops, lifts the lantern and looks around" },
+      { ko: "장갑 낀 손으로 떨어지는 눈송이를 받는다", en: "catches a falling snowflake on his gloved hand" },
+    ],
+    details: [
+      { ko: "가지에서 눈가루가 떨어진다", en: "Snow dust falls from the branches." },
+      { ko: "공기 중에 눈가루가 반짝인다", en: "Fine snow sparkles in the air." },
+    ],
+    sound: { ko: "나뭇가지 사이 바람 소리와 눈 밟는 소리", en: "soft wind through the trees and footsteps on snow" },
+    music: false,
+  },
+  kpop: {
+    label: "다락방",
+    subject: "The idol",
+    subjectKo: "아이돌이",
+    personKo: "은색 긴 생머리, 반짝이는 은색 숏패딩, 검은 와이드 팬츠, 흰 퍼 부츠를 신은 20대 초반 한국 여성 K-pop 아이돌",
+    placeKo: "경사진 흰 천장, 동그란 연보라 러그, 빈백, 꼬마전구가 있는 작은 다락방 세트",
+    person: "a Korean K-pop idol woman in her early 20s with long straight silver hair, a shiny silver cropped puffer jacket, black wide pants and white fur boots",
+    place: "a small attic room set with a sloped white ceiling, a round lilac rug, beanbags and string lights",
+    actions: [
+      { ko: "러그 위에서 짧고 힘있는 안무 동작을 하고 포즈로 멈춘다", en: "does a short, sharp dance move on the rug and freezes in a pose" },
+      { ko: "한 바퀴 돌고 카메라를 가리킨다", en: "spins once and points at the camera" },
+      { ko: "주머니에 손을 넣고 비트에 맞춰 몸을 좌우로 흔든다", en: "sways side to side to the beat with her hands in her jacket pockets" },
+    ],
+    details: [
+      { ko: "꼬마전구가 반짝인다", en: "The string lights twinkle." },
+      { ko: "창밖으로 눈이 내린다", en: "Snow falls outside the round window." },
+    ],
+    sound: { ko: "경쾌한 K-pop 비트", en: "an upbeat K-pop style beat" },
+    music: true,
+  },
+  office: {
+    label: "오피스",
+    subject: "The man",
+    subjectKo: "남자가",
+    personKo: "단정하게 넘긴 짧은 머리, 회색 터틀넥, 차콜 슬랙스, 목에 건 사원증, 팔에 걸친 남색 울 코트의 30대 한국 남성 회사원",
+    placeKo: "눈 내리는 겨울 오후의 창가 사무실 책상",
+    person: "a Korean office worker in his 30s with neatly combed short hair, a gray turtleneck, charcoal slacks, an ID badge on a lanyard and a navy wool coat over his arm",
+    place: "a window-side office desk on a snowy winter afternoon",
+    actions: [
+      { ko: "노트북에서 고개를 들어 창밖을 보고 머그컵을 든다", en: "looks up from the laptop, glances out the window and lifts the mug" },
+      { ko: "두 팔을 뻗어 기지개를 켜고 의자에 기댄다", en: "stretches both arms and leans back in the chair" },
+      { ko: "모니터를 보다가 작게 웃는다", en: "looks at the monitor and breaks into a small smile" },
+    ],
+    details: [
+      { ko: "머그컵에서 김이 오른다", en: "Steam rises from the mug." },
+      { ko: "창밖으로 눈이 내린다", en: "Snow falls outside the window." },
+    ],
+    sound: { ko: "키보드 소리와 잔잔한 사무실 소음", en: "keyboard clicks and a quiet office hum" },
+    music: false,
+  },
+};
+
+export const CAMERA_MOVES = [
+  { ko: "고정", koSentence: "카메라는 고정되어 있다.", en: "Fixed camera.", term: "fixed camera", desc: "카메라가 움직이지 않는다" },
+  { ko: "밀고 들어가기", koSentence: "카메라가 인물에게 천천히 다가간다.", en: "The camera slowly pushes in toward them.", term: "push in", desc: "인물에게 천천히 다가간다" },
+  { ko: "뒤로 빠지기", koSentence: "카메라가 천천히 뒤로 빠지며 장소를 보여 준다.", en: "The camera slowly pulls back to reveal the place.", term: "pull back", desc: "멀어지며 장소가 드러난다" },
+  { ko: "좌우로 돌리기", koSentence: "카메라가 왼쪽에서 오른쪽으로 천천히 돈다.", en: "The camera slowly pans from left to right.", term: "pan", desc: "제자리에서 고개를 돌리듯" },
+  { ko: "따라가기", koSentence: "카메라가 인물 옆에서 함께 이동한다.", en: "Tracking shot: the camera moves alongside them.", term: "tracking shot", desc: "걷는 인물을 옆이나 뒤에서 따라간다" },
+  { ko: "둘레 돌기", koSentence: "카메라가 인물 주위를 천천히 반 바퀴 돈다.", en: "The camera slowly orbits halfway around them.", term: "orbit", desc: "인물 주위를 반 바퀴 돈다" },
+  { ko: "들고 찍기", koSentence: "손에 들고 찍은 듯 카메라가 살짝 흔들린다.", en: "Handheld camera with a gentle, natural sway.", term: "handheld", desc: "살짝 흔들리는 현장감" },
+  { ko: "위로 올라가기", koSentence: "카메라가 천천히 위로 올라가며 내려다본다.", en: "The camera slowly cranes up to a high angle.", term: "crane up", desc: "높이 올라가며 내려다본다" },
+];
+
+export const SHOT_SIZES = [
+  { ko: "풀샷", koSentence: "풀샷, 머리부터 발끝까지.", en: "Full shot, head to toe." },
+  { ko: "미디엄 샷", koSentence: "허리 위 미디엄 샷.", en: "Medium shot from the waist up." },
+  { ko: "클로즈업", koSentence: "얼굴 클로즈업.", en: "Close-up on the face." },
+  { ko: "와이드", koSentence: "와이드 샷, 장소 안에 인물이 작게.", en: "Wide shot, the person small in the place." },
+];
+
+export const NEGATIVES = [
+  { ko: "자막", en: "subtitles" },
+  { ko: "글자", en: "text" },
+  { ko: "워터마크", en: "watermark" },
+  { ko: "다른 사람", en: "extra people" },
+  { ko: "로고", en: "logos" },
+];
+
+const VB_FF = "lv1:u3:vb:ff";        // builder state keys (read by the final builder and the summary)
+const VB_REF = "lv1:u3:vb:ref";
+const VB_FINAL = "lv1:u3:vb:final";
 
 export const LEVEL = {
   id: "lv1",
@@ -618,6 +739,7 @@ export const LEVEL = {
               picks: ["real", "identity", "hangul", "edit"],
               credits: HF_CREDITS,
               checked: CREDITS_CHECKED,
+              creditNote: CREDITS_NOTE,
             },
             {
               type: "tip",
@@ -658,11 +780,275 @@ export const LEVEL = {
         },
       ],
     },
-    { id: "u3", code: "1-3", title: "이미지 프롬프트 다듬기", locked: true },
-    { id: "u4", code: "1-4", title: "힉스필드로 첫 영상", locked: true },
-    { id: "u5", code: "1-5", title: "캐릭터 시트와 스틸컷", locked: true },
-    { id: "u6", code: "1-6", title: "힉스필드 모델 비교", locked: true },
-    { id: "u7", code: "1-7", title: "영상 프롬프트 다듬기", locked: true },
+    {
+      id: "u3",
+      code: "1-3",
+      title: "힉스필드로 첫 영상",
+      goal: "내 인물 샷과 장소 샷으로 5~10초 영상 한 편 만들기 (Wan 3.0)",
+      minutes: 27,
+      steps: [
+        {
+          id: "s1",
+          tab: "인트로",
+          title: "이번 유닛에서 할 일",
+          minutes: 2,
+          blocks: [
+            {
+              type: "lead",
+              text: "오늘은 사진을 <b>영상</b>으로 만들어요. 재료는 유닛 1에서 고른 인물 샷과 장소 샷이에요. 영상은 <b>힉스필드</b>에서 내 계정 크레딧으로 만들고, 이 페이지는 프롬프트를 만들어 주고 결과를 모아 줘요.",
+            },
+            {
+              type: "make",
+              title: "이번 유닛이 끝나면 갖게 되는 것",
+              items: [
+                { icon: "video", title: "내 첫 영상 한 편", desc: "720p, 5~10초, 소리까지 함께" },
+                { icon: "note", title: "그 영상의 프롬프트", desc: "다음 유닛과 모델 비교에서 다시 써요" },
+              ],
+            },
+            {
+              type: "table",
+              title: "오늘 쓰는 모델: Wan 3.0",
+              head: ["항목", "내용"],
+              rows: [
+                ["만드는 방식", "글로만 / 첫 프레임(+끝 프레임) / 참고 이미지(최대 10장). 첫 프레임과 참고 이미지는 같이 쓸 수 없어요"],
+                ["길이", "2~30초. 오늘은 5초로 연습하고, 마지막 한 편만 5~10초"],
+                ["해상도와 크레딧", "480p 초당 1 · 720p 초당 1.75 · 1080p 초당 3.5 (5초면 5 · 8.75 · 17.5)"],
+                ["Wan 3.0 Prime과 헷갈리지 않기", "같은 회사의 상위 버전이에요. 480p 초당 1.5 · 720p 초당 3 · 1080p 초당 6으로 1.5배 넘게 비싸요. 오늘은 이름에 Prime이 없는 Wan 3.0을 써요"],
+                ["소리", "영상과 함께 만들어요(기본 켜짐). 꺼도 가격은 같아요"],
+                ["생각하기", "느리지만 프롬프트를 더 잘 따라요. 가격은 같아요"],
+                ["프롬프트 언어", "공식 지원은 중국어와 영어지만 한국어도 잘 따라요(운영진 시험). 이 페이지는 한국어와 영어 문장을 둘 다 만들어요"],
+              ],
+              note: "힉스필드 모델 정보와 비용 조회 기준 (2026-11-14)",
+            },
+            {
+              type: "tip",
+              title: "오늘 쓰는 크레딧은 20~35 정도예요",
+              text: "연습은 480p 5초(5크레딧)로 두세 번, 마지막 한 편만 720p(5초 8.75, 10초 17.5)로 만들어요. 크레딧이 모자라면 운영진에게 알려 주세요.",
+            },
+          ],
+        },
+        {
+          id: "s2",
+          tab: "준비",
+          title: "힉스필드 준비",
+          goal: "힉스필드에서 Wan 3.0 영상 만들기 화면을 열고 설정을 맞춘다",
+          minutes: 3,
+          blocks: [
+            {
+              type: "hfguide",
+              title: "힉스필드에서 순서대로",
+              steps: [
+                { title: "로그인하고 크레딧 확인", text: "higgsfield.ai에 로그인해요. 오른쪽 위 프로필 사진을 누르면 남은 크레딧이 보여요. 40 이상인지 봐요.",
+                  img: "assets/hf/hf_login_credits.jpg" },
+                { title: "비디오 화면에서 Wan 3.0 고르기", text: "위쪽 메뉴에서 비디오를 눌러요. 아래쪽 모델 칸을 눌러 Wan 3.0을 골라요. 처음에는 Wan 3.0 Prime이 골라져 있을 수 있어요. Prime은 크레딧이 1.5배 넘게 드니까 이름에 Prime이 없는 것을 골라요.",
+                  img: "assets/hf/hf_video_wan.jpg" },
+                { title: "설정 맞추기", text: "모델 칸 아래에서 길이는 5s, 품질은 480p로 바꿔요. 프롬프트 칸 아래 소리는 켬으로 둬요. 비율이나 생각하기 칸이 보이면 16:9, 끔으로 둬요. 연습은 싸게 하고 마지막 한 편만 화질을 올려요." },
+              ],
+            },
+            {
+              type: "guide",
+              title: "올릴 사진은 다음 스텝에서 바로 내려받을 수 있어요",
+              items: [
+                "유닛 1에서 고른 <b>인물 샷</b>과 <b>장소 샷</b>을 써요. 스텝 4와 5에 사진과 내려받기 버튼이 있어요.",
+                "유닛 1을 건너뛰었다면 예시 사진이 대신 들어가 있어요.",
+                "릴스용 세로 영상(9:16)도 돼요. 다만 유닛 1의 장소 샷이 가로(16:9)라서 오늘은 16:9가 자연스러워요.",
+              ],
+            },
+          ],
+        },
+        {
+          id: "s3",
+          tab: "공식",
+          title: "영상 프롬프트 공식",
+          goal: "영상 프롬프트를 동작, 카메라, 소리로 나눠 쓰는 법을 안다",
+          minutes: 3,
+          blocks: [
+            {
+              type: "anatomy",
+              title: "영상 프롬프트의 뼈대",
+              parts: [
+                { label: "누가", text: "목도리를 두른 여자가", color: "a" },
+                { label: "무엇을 (동작 하나)", text: "천천히 횡단보도를 건너다 멈춰 카메라를 본다", color: "b" },
+                { label: "카메라 (하나만)", text: "카메라는 고정", color: "e" },
+                { label: "소리", text: "골목 소음과 발소리, 대사·배경음악 없음", color: "d" },
+              ],
+            },
+            {
+              type: "guide",
+              title: "규칙 다섯 가지",
+              items: [
+                "<b>형용사 대신 동사와 속도</b>를 써요. \"아름다운\"보다 \"천천히 걷다가 멈춘다\"가 움직임을 만들어요.",
+                "<b>5초에는 동작 하나</b>. 6~10초는 동작 한두 개예요.",
+                "<b>카메라 움직임은 한 번에 하나</b>. 두 개를 쓰면 모델이 하나만 고르거나 이상하게 섞어요.",
+                "<b>해상도와 길이는 글로 쓰지 않아요</b>. 설정에서 골라요. \"4K\"라고 써도 효과가 없어요.",
+                "<b>원하지 않는 소리는 적어서 막아요</b>: \"No dialogue. No background music.\" (대사 없음, 배경음악 없음)",
+              ],
+            },
+            { type: "cards", title: "카메라 움직임 카드", items: CAMERA_MOVES },
+            {
+              type: "tip",
+              title: "출처",
+              text: "Wan 3.0 프롬프트 가이드(wan30.video)의 공식과 흔한 실수에서 뽑았어요.",
+            },
+          ],
+        },
+        {
+          id: "s4",
+          tab: "첫 프레임",
+          title: "첫 프레임으로 움직이기",
+          goal: "내 장소 샷을 첫 프레임으로 넣고, 움직임과 카메라와 소리만 써서 5초 영상을 만든다",
+          minutes: 5,
+          blocks: [
+            {
+              type: "guide",
+              title: "사진이 그대로 영상의 첫 장면이 돼요",
+              items: [
+                "힉스필드에서 <b>프레임</b> 탭을 누르고 <b>시작 프레임</b> 칸에 내 장소 샷을 올려요. 종료 프레임은 비워 둬요.",
+                "프롬프트에는 <b>움직임, 카메라, 소리만</b> 써요. 사진에 이미 있는 옷이나 장소를 다시 설명하지 않아요. 다시 설명하는 게 이 방식의 가장 흔한 실수예요.",
+                "아래에서 칩을 고르면 문장이 만들어져요. <b>복사</b>해서 힉스필드 프롬프트 칸에 붙여넣어요. 칸에 다른 글이 남아 있으면 먼저 지워요. 한국어가 기본이고, 영어로도 바꿀 수 있어요.",
+              ],
+            },
+            {
+              type: "videoex",
+              title: "예시: 같은 사진, 한국어 프롬프트와 영어 프롬프트",
+              note: "운영진이 Wan 3.0 · 480p · 5초 · 첫 프레임으로 만든 결과예요(2026-11-14). 한국어는 \"카메라 고정\"을 지켰고, 영어는 카메라가 앞으로 다가갔어요. 한 번씩만 만든 거라 늘 이렇다는 뜻은 아니에요.",
+              items: [
+                { src: "assets/videos/wan_firstframe_ko.mp4", label: "한국어 프롬프트",
+                  prompt: "여자가 천천히 횡단보도를 건너다 가운데서 멈춰 카메라를 본다. 차가운 공기에 입김이 하얗게 퍼진다. 카메라는 고정. 소리: 조용한 골목 소음과 눈 밟는 발소리. 대사 없음. 배경음악 없음." },
+                { src: "assets/videos/wan_firstframe_en.mp4", label: "영어 프롬프트",
+                  prompt: "The woman slowly walks across the crosswalk, stops in the middle and looks into the camera. Her breath fogs in the cold air. Fixed camera. Sound: quiet alley ambience and footsteps on the snow. No dialogue. No background music." },
+              ],
+            },
+            { type: "vbuilder", id: "ff", mode: "firstframe", stateKey: VB_FF },
+            { type: "videoupload", id: "ff", label: "첫 프레임 영상", res: "480p", dur: 5, promptFrom: VB_FF },
+            {
+              type: "tip",
+              title: "기다리는 동안",
+              text: "생성에는 몇 분 걸려요. 기다리는 동안 다음 스텝을 읽어 두세요. 다 되면 힉스필드에서 내려받아 위 칸에 올려요.",
+            },
+          ],
+        },
+        {
+          id: "s5",
+          tab: "참고 이미지",
+          title: "참고 이미지로 새 장면 만들기",
+          goal: "인물과 장소 사진을 참고 이미지로 넣고, 새 구도의 5초 영상을 만든다",
+          minutes: 5,
+          blocks: [
+            {
+              type: "guide",
+              title: "사진을 \"재료\"로 넣고 장면은 새로 만들어요",
+              items: [
+                "힉스필드에서 <b>레퍼런스</b> 탭을 누르고, 첫 번째(Image 1)로 인물 샷, 두 번째(Image 2)로 장소 사진을 올려요. 순서가 중요해요.",
+                "첫 프레임과 달리 <b>새 구도</b>로 만들어요. 그래서 샷 크기와 카메라를 프롬프트로 정할 수 있어요.",
+                "프롬프트 첫머리에서 <b>역할을 정하고</b>(\"Image 1은 주인공이다\"), <b>얼굴을 고정하는 문장</b>을 넣어요.",
+                "장소 사진은 사람이 없는 것이 좋아요. 사람이 있으면 두 번째 사람이 생길 수 있어서 빼기 목록에 \"extra people\"을 넣어요.",
+              ],
+            },
+            { type: "vbuilder", id: "ref", mode: "reference", stateKey: VB_REF },
+            { type: "videoupload", id: "ref", label: "참고 이미지 영상", res: "480p", dur: 5, promptFrom: VB_REF },
+            {
+              type: "check",
+              id: "s5check",
+              title: "보는 포인트",
+              items: [
+                "같은 사람으로 보인다 (1-2의 인물 유지 비교와 같은 기준)",
+                "장소가 사진과 닮았다",
+                "동작이 자연스럽고 하나로 끝난다",
+              ],
+              note: "첫 프레임 영상과 나란히 보면서, 어느 방식이 내 장면에 더 맞는지 골라 두세요.",
+            },
+          ],
+        },
+        {
+          id: "s6",
+          tab: "고치기",
+          title: "한 군데만 고치기",
+          goal: "두 영상 중 하나를 골라 문제 하나만 고친다",
+          minutes: 3,
+          blocks: [
+            {
+              type: "table",
+              title: "문제가 보이면 이렇게 고쳐요",
+              head: ["문제", "고치는 법"],
+              rows: [
+                ["얼굴이 바뀌었다", "얼굴 고정 문장을 앞으로 옮기고, 인물 특징을 다시 적어요"],
+                ["동작이 엉킨다", "동작을 하나로 줄이거나 길이를 늘려요"],
+                ["카메라가 이상하게 움직인다", "카메라 움직임을 하나만 남겨요"],
+                ["자막, 글자, 워터마크가 생겼다", "끝에 빼기 목록을 넣어요"],
+                ["원하지 않는 음악이나 말소리", "\"대사 없음. 배경음악 없음.\"을 넣어요"],
+                ["너무 정적이다", "동사를 바꾸고 속도와 크기를 적어요 (slowly, sharply, a small step)"],
+              ],
+            },
+            {
+              type: "copychips",
+              title: "자주 쓰는 고치기 문장 (눌러서 복사)",
+              items: [
+                { ko: "대사·배경음악 없음", koText: "대사 없음. 배경음악 없음.", en: "No dialogue. No background music." },
+                { ko: "얼굴 고정", koText: "얼굴, 머리, 옷은 Image 1과 똑같이 유지한다.", en: "Keep the face, hair and outfit consistent with Image 1." },
+                { ko: "빼기 목록", koText: "빼기 목록: 자막, 글자, 워터마크, 다른 사람.", en: "Negative prompt list: subtitles, text, watermark, extra people." },
+                { ko: "동작을 천천히", koText: "천천히 부드럽게 움직인다.", en: "Slow, smooth movement." },
+                { ko: "카메라 고정", koText: "카메라는 고정되어 있다.", en: "Fixed camera." },
+              ],
+            },
+            {
+              type: "guide",
+              title: "고친 프롬프트로 다시 만들어요 (선택, 480p 5크레딧)",
+              items: [
+                "스텝 4나 5의 프롬프트 칸에서 <b>한 군데만</b> 고쳐요. 칩을 다시 누르면 문장이 새로 조립돼요.",
+                "다시 만든 영상은 아래에 올려요. 시간이 없으면 넘어가도 괜찮아요.",
+              ],
+            },
+            { type: "videoupload", id: "fix", label: "고친 영상", res: "480p", dur: 5 },
+          ],
+        },
+        {
+          id: "s7",
+          tab: "최종",
+          title: "마지막 한 편 만들기",
+          goal: "고른 방식과 프롬프트로 720p 영상 한 편을 만든다",
+          minutes: 4,
+          blocks: [
+            {
+              type: "guide",
+              title: "이번에는 화질을 올려요",
+              items: [
+                "설정을 <b>720p</b>로 바꿔요. 5초는 8.75크레딧, 10초는 17.5크레딧이에요.",
+                "10초로 하려면 <b>동작을 두 개</b>로 늘려요. 아래에서 두 번째 동작을 고를 수 있어요.",
+                "<b>생각하기</b>를 켜도 가격은 같아요. 느려지지만 마지막 한 편은 켜 볼 만해요.",
+              ],
+            },
+            { type: "vbuilder", id: "final", mode: "final", stateKey: VB_FINAL, from: { firstframe: VB_FF, reference: VB_REF } },
+            { type: "videoupload", id: "final", label: "내 첫 영상 (720p)", res: "720p", dur: 5, promptFrom: VB_FINAL },
+          ],
+        },
+        {
+          id: "s8",
+          tab: "마무리",
+          title: "내 첫 영상",
+          goal: "영상과 프롬프트를 저장하고 오늘 쓴 크레딧을 확인한다",
+          minutes: 2,
+          blocks: [
+            { type: "vfinal", order: ["final", "fix", "ref", "ff"] },
+            {
+              type: "check",
+              id: "finalcheck",
+              title: "마무리 체크",
+              items: [
+                "첫 프레임과 참고 이미지 방식의 차이를 안다",
+                "프롬프트에 동작, 카메라, 소리를 나눠 썼다",
+                "원하지 않는 소리와 글자를 빼는 문장을 안다",
+                "720p 영상 한 편을 내려받았다",
+                "이 페이지에 영상과 프롬프트를 올렸다",
+              ],
+              note: "다음 유닛(1-4 캐릭터 시트와 스틸컷)에서는, 오늘 얼굴이 흔들렸다면 그걸 잡는 방법을 배워요.",
+            },
+          ],
+        },
+      ],
+    },
+    { id: "u4", code: "1-4", title: "캐릭터 시트와 스틸컷", locked: true },
+    { id: "u5", code: "1-5", title: "힉스필드 모델 비교", locked: true },
   ],
 };
 
